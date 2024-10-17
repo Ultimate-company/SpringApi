@@ -2,7 +2,6 @@ package com.example.SpringApi.Services.CentralDatabase;
 
 import com.example.SpringApi.Authentication.JwtTokenProvider;
 import com.example.SpringApi.ErrorMessages;
-import com.example.SpringApi.PropertiesReader;
 import com.example.SpringApi.Repository.CentralDatabase.GoogleUserRepository;
 import com.example.SpringApi.Repository.CentralDatabase.UserCarrierPermissionMappingRepository;
 import com.example.SpringApi.Repository.CentralDatabase.UserRepository;
@@ -44,9 +43,7 @@ public class LoginDataAccessor implements ILoginSubTranslator {
         this.googleUserRepository = googleUserRepository;
         this.userCarrierPermissionMappingRepository = userCarrierPermissionMappingRepository;
         this.userLogDataAccessor = userLogDataAccessor;
-        this.emailTemplates = new EmailTemplates(PropertiesReader.getProperty("SENDGRID_SENDER_NAME"),
-                PropertiesReader.getProperty("SENDGRID_FROM_ADDRESS"),
-                PropertiesReader.getProperty("SENDGRID_API_KEY"));
+        this.emailTemplates = new EmailTemplates("", "" , "");
         this.jwtTokenProvider = new JwtTokenProvider();
     }
 

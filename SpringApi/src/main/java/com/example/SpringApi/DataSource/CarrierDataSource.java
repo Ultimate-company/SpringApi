@@ -1,6 +1,5 @@
 package com.example.SpringApi.DataSource;
 
-import com.example.SpringApi.PropertiesReader;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -34,37 +33,39 @@ public class CarrierDataSource {
     //add JPA entities path here
     private final String PACKAGE_SCAN = "com.example.SpringApi.DatabaseModels.CarrierDatabase";
 
-    //set db1 as the primary and default database connection
-    @Primary
+    @Bean(name = "client02DataSource")
+    public DataSource client02DataSource() {
+        try {
+            return DataSourceBuilder.create()
+                    .url("jdbc:mysql://35.237.130.224:3306/CentralDatabase")
+                    .password("uUS2qz?e+@~$j&dm")
+                    .username("root-dev-sqluser")
+                    .driverClassName("com.mysql.cj.jdbc.Driver")
+                    .build();
+        } catch (Exception ex) {
+            System.err.println("Error creating client02DataSource: " + ex.getMessage());
+            ex.printStackTrace();  // Print the full stack trace for better visibility
+            throw new RuntimeException("Failed to create client02DataSource", ex); // Re-throw to fail the context
+        }
+    }
+
     @Bean(name = "client03DataSource")
-    @ConfigurationProperties(prefix="spring.client03")
     public DataSource client03DataSource() {
         return DataSourceBuilder.create()
-                .url(PropertiesReader.getProperty("spring.client03.url"))
-                .password(PropertiesReader.getProperty("spring.client03.password"))
-                .username(PropertiesReader.getProperty("spring.client03.username"))
-                .driverClassName(PropertiesReader.getProperty("spring.client03.driver-class-name"))
+                .url("jdbc:mysql://35.237.130.224:3306/CentralDatabase")
+                .password("uUS2qz?e+@~$j&dm")
+                .username("root-dev-sqluser")
+                .driverClassName("com.mysql.cj.jdbc.Driver")
                 .build();
     }
 
+    //The multidatasource configuration
     @Primary
-    @Bean(name = "client02DataSource")
-    @ConfigurationProperties(prefix="spring.client02")
-    public DataSource client02DataSource() {
-        return DataSourceBuilder.create()
-                .url(PropertiesReader.getProperty("spring.client02.url"))
-                .password(PropertiesReader.getProperty("spring.client02.password"))
-                .username(PropertiesReader.getProperty("spring.client02.username"))
-                .driverClassName(PropertiesReader.getProperty("spring.client02.driver-class-name"))
-                .build();
-    }
-
-    //The multidatasource configuration 
     @Bean(name = "multiRoutingDataSource")
     public DataSource multiRoutingDataSource() {
         Map<Object, Object> targetDataSources = new HashMap<>();
-        targetDataSources.put(2L, client02DataSource());
-        targetDataSources.put(3L, client03DataSource());
+        targetDataSources.put(1L, client02DataSource());
+        targetDataSources.put(2L, client03DataSource());
         MultiRoutingDataSource multiRoutingDataSource
                 = new MultiRoutingDataSource();
         multiRoutingDataSource.setDefaultTargetDataSource(client02DataSource());
@@ -73,6 +74,7 @@ public class CarrierDataSource {
     }
 
     //add multi entity configuration code
+    @Primary
     @Bean(name = "multiEntityManager")
     public LocalContainerEntityManagerFactoryBean multiEntityManager() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
@@ -84,6 +86,7 @@ public class CarrierDataSource {
         return em;
     }
 
+    @Primary
     @Bean(name = "multiTransactionManager")
     public PlatformTransactionManager multiTransactionManager() {
         JpaTransactionManager transactionManager = new JpaTransactionManager();

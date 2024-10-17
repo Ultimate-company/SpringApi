@@ -1,18 +1,14 @@
 package com.example.SpringApi.DataSource;
 
 public class CarrierContextHolder {
-
     private static final ThreadLocal<Long> contextHolder = new ThreadLocal<>();
 
-    public static void setCarrierId(long carrierId) {
+    public static void setCarrierId(Long carrierId) {
         contextHolder.set(carrierId);
     }
 
-    public static long getCarrierId() {
-        if(contextHolder.get() == null){
-            return 1L;
-        }
-        return contextHolder.get();
+    public static Long getCarrierId() {
+        return contextHolder.get() != null ? contextHolder.get() : 1L;
     }
 
     public static void clear() {

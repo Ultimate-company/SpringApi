@@ -10,7 +10,6 @@ import com.example.SpringApi.Repository.CentralDatabase.UserRepository;
 import com.example.SpringApi.Services.BaseDataAccessor;
 import com.example.SpringApi.Services.CentralDatabase.UserLogDataAccessor;
 import com.example.SpringApi.SuccessMessages;
-import com.mysql.cj.x.protobuf.Mysqlx;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ApiRoutes;

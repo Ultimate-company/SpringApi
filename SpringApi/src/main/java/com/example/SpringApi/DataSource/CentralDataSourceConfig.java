@@ -1,6 +1,5 @@
 package com.example.SpringApi.DataSource;
 
-import com.example.SpringApi.PropertiesReader;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -37,14 +36,13 @@ public class CentralDataSourceConfig {
     }
 
     @Primary
-    @Bean(name  = "centralDataSource")
-    @ConfigurationProperties(prefix="spring.datasource")
+    @Bean(name = "centralDataSource")
     public DataSource centralDataSource() {
         return DataSourceBuilder.create()
-                .url(PropertiesReader.getProperty("spring.datasource.url"))
-                .password(PropertiesReader.getProperty("spring.datasource.password"))
-                .username(PropertiesReader.getProperty("spring.datasource.username"))
-                .driverClassName(PropertiesReader.getProperty("spring.datasource.driver-class-name"))
+                .url("jdbc:mysql://35.237.130.224:3306/CentralDatabase")
+                .password("uUS2qz?e+@~$j&dm")
+                .username("root-dev-sqluser")
+                .driverClassName("com.mysql.cj.jdbc.Driver")
                 .build();
     }
 

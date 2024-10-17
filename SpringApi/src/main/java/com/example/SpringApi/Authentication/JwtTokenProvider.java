@@ -1,11 +1,9 @@
 package com.example.SpringApi.Authentication;
 
 import com.example.SpringApi.DatabaseModels.CentralDatabase.WebTemplateCarrierMapping;
-import com.example.SpringApi.PropertiesReader;
 import io.jsonwebtoken.Claims;
 import org.example.CommonHelpers.PasswordHelper;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.User;
-import org.example.Models.CommunicationModels.CarrierModels.WebTemplate;
 import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.Map;
@@ -19,9 +17,9 @@ public class JwtTokenProvider {
         Date expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
         return builder()
-                .issuer(PropertiesReader.getProperty("ISSUER"))
+                .issuer("https://localhost:4433/")
                 .issuedAt(now)
-                .audience().add(PropertiesReader.getProperty("AUDIENCE")).and()
+                .audience().add("https://localhost:4433/").and()
                 .claim("wildCard", webTemplateCarrierMapping.getWildCard())
                 .claim("webTemplateId", webTemplateCarrierMapping.getWebTemplateId())
                 .claim("carrierId",webTemplateCarrierMapping.getCarrierId())
@@ -35,10 +33,9 @@ public class JwtTokenProvider {
         Date expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
         return builder()
-                .issuer(PropertiesReader.getProperty("ISSUER"))
+                .issuer("https://localhost:4433/")
                 .issuedAt(now)
-                .audience().add(PropertiesReader.getProperty("AUDIENCE")).and()
-                .claim("email", user.getLoginName())
+                .audience().add("https://localhost:4433/").and()                .claim("email", user.getLoginName())
                 .claim("given_name", user.getFirstName())
                 .claim("last_name", user.getLastName())
                 .claim("role", user.getRole())
