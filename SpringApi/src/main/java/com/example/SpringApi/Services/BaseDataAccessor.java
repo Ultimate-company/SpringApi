@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Optional;
 
-
+//
 public class BaseDataAccessor {
     private final HttpServletRequest request;
     private final CarrierRepository carrierRepository;
