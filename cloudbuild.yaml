@@ -19,11 +19,12 @@ steps:
 
   - name: 'gcr.io/cloud-builders/docker'
     args: [
-      'build', '-t', 'gcr.io/ultimate-company/spring-api', '.'
+      'build', '-t', 'gcr.io/ultimate-company/uc-dev-api', '.'
     ]
     dir: SpringApi
+    
   - name: 'gcr.io/cloud-builders/gcloud'
-    args: ['run', 'deploy', 'spring-api', '--image', 'gcr.io/ultimate-company/spring-api', '--platform', 'managed', '--region', 'us-central1', '--allow-unauthenticated']
+    args: ['run', 'deploy', 'uc-dev-api', '--image', 'gcr.io/ultimate-company/uc-dev-api', '--platform', 'managed', '--region', 'us-central1', '--allow-unauthenticated']
 timeout: '1200s'
 options:
   machineType: 'N1_HIGHCPU_8'
