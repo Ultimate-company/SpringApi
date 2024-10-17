@@ -11,7 +11,7 @@ steps:
         git checkout development
         echo "Building the Spring Models project..."
         mvn clean install
-        cd ../..
+        cd ../
         echo "Changing to the SpringApi directory..."
         cd SpringApi
         echo "Building the application..."
