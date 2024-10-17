@@ -7,7 +7,6 @@ steps:
         echo "Cloning the Spring Models repository..."
         git clone https://nahushr18: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@github.com/nahushr18/SpringModels.git
         echo "Switching to the development branch..."
-        cd SpringModels
         git checkout development
         echo "Building the Spring Models project..."
         mvn clean install
