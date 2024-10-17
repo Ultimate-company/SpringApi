@@ -1,0 +1,35 @@
+pipelines:
+  branches:
+    development:
+      - step:
+          name: Build Spring Models and Spring Api
+          image: maven:3.9.9-eclipse-temurin-21
+          script:
+            - echo "Installing Python and Google Cloud SDK..."
+            - apt-get update && apt-get install -y python3 curl apt-transport-https ca-certificates gnupg
+            - echo "Adding Google Cloud SDK repo..."
+            - echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+            - curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+            - apt-get update && apt-get install -y google-cloud-sdk
+            - echo "Cloning the spring-models project..."
+            - git clone https://x-token-auth:ATCTT3xFfGN0YqGA3jrEAjgF003payG36AYoK3Fm-_oijH_luWJwy5IjoZkCC4ONK5erGoHvZkp3gdHlXSVRhISOau8Rv5PgINmT2jlX1xHJHD-6AJ49RsYYBZmZG-lOaOUWTNoyrrUNGmW3ip3NqHdq1IIvKWBjgnMalKwaG-4WdIDEaE9-Ggs=021DA57E@bitbucket.org/nahushr18/spring-models.git
+            - echo "Switching to the development branch..."
+            - cd spring-models
+            - git checkout development
+            - echo "Building the spring-models project..."
+            - cd SpringModels
+            - mvn clean install
+            - cd ../..
+            - echo "Changing to the SpringApi directory..."
+            - cd SpringApi
+            - echo "Building the application for development..."
+            - mvn clean package
+            - echo "Authenticating with Google Cloud..."
+            - echo $GOOGLE_CLOUD_KEYFILE | base64 --decode -i > ${HOME}/gcloud-service-key.json
+            - gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            - gcloud config set project ultimate-company
+            - echo "Deploying to App Engine..."
+            - mvn package appengine:deploy -Dapp.deploy.projectId=ultimate-company
+          caches:
+            - maven
+          deployment: development  # Indicating deployment environment
