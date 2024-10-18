@@ -9,6 +9,7 @@ import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -37,13 +38,24 @@ public class CentralDataSourceConfig {
 
     @Primary
     @Bean(name = "centralDataSource")
-    public DataSource centralDataSource() {
-        return DataSourceBuilder.create()
-                .url("jdbc:mysql://host.docker.internal:3307/CentralDatabase")
-                .password("root")
-                .username("root")
-                .driverClassName("com.mysql.cj.jdbc.Driver")
-                .build();
+    public DataSource centralDataSource(Environment environment) {
+        String profile = environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default";
+        switch (profile) {
+            case "development":
+                return DataSourceBuilder.create()
+                        .url("jdbc:mysql://host.docker.internal:3307/CentralDatabase")
+                        .password("root")
+                        .username("root")
+                        .driverClassName("com.mysql.cj.jdbc.Driver")
+                        .build();
+            case "staging":
+               return null;
+            case "uat":
+               return null;
+            case "main":
+               return null;
+        }
+        return null;
     }
 
     @Primary
