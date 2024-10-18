@@ -1,7 +1,7 @@
 package com.example.SpringApi.DataSource;
 
+import org.example.CommonHelpers.EnvironmentHelper;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,30 +33,65 @@ public class CarrierDataSource {
     //add JPA entities path here
     private final String PACKAGE_SCAN = "com.example.SpringApi.DatabaseModels.CarrierDatabase";
 
+    @Bean(name = "client01DataSource")
+    public DataSource client01DataSource() {
+        switch(EnvironmentHelper.getCurrentGitBranch()){
+            case "development":
+                return DataSourceBuilder.create()
+                        .url("jdbc:mysql://35.237.130.224:3306/Client_01")
+                        .password("uUS2qz?e+@~$j&dm")
+                        .username("root-dev-sqluser")
+                        .driverClassName("com.mysql.cj.jdbc.Driver")
+                        .build();
+            case "staging":
+                return null;
+            case "uat":
+                return null;
+            case "main":
+                return null;
+        }
+        return null;
+    }
+
+
     @Bean(name = "client02DataSource")
     public DataSource client02DataSource() {
-        try {
-            return DataSourceBuilder.create()
-                    .url("jdbc:mysql://35.237.130.224:3306/CentralDatabase")
-                    .password("uUS2qz?e+@~$j&dm")
-                    .username("root-dev-sqluser")
-                    .driverClassName("com.mysql.cj.jdbc.Driver")
-                    .build();
-        } catch (Exception ex) {
-            System.err.println("Error creating client02DataSource: " + ex.getMessage());
-            ex.printStackTrace();  // Print the full stack trace for better visibility
-            throw new RuntimeException("Failed to create client02DataSource", ex); // Re-throw to fail the context
+        switch(EnvironmentHelper.getCurrentGitBranch()){
+            case "development":
+                return DataSourceBuilder.create()
+                        .url("jdbc:mysql://35.237.130.224:3306/Client_02")
+                        .password("uUS2qz?e+@~$j&dm")
+                        .username("root-dev-sqluser")
+                        .driverClassName("com.mysql.cj.jdbc.Driver")
+                        .build();
+            case "staging":
+                return null;
+            case "uat":
+                return null;
+            case "main":
+                return null;
         }
+        return null;
     }
 
     @Bean(name = "client03DataSource")
     public DataSource client03DataSource() {
-        return DataSourceBuilder.create()
-                .url("jdbc:mysql://35.237.130.224:3306/CentralDatabase")
-                .password("uUS2qz?e+@~$j&dm")
-                .username("root-dev-sqluser")
-                .driverClassName("com.mysql.cj.jdbc.Driver")
-                .build();
+        switch(EnvironmentHelper.getCurrentGitBranch()){
+            case "development":
+                return DataSourceBuilder.create()
+                        .url("jdbc:mysql://35.237.130.224:3306/Client_03")
+                        .password("uUS2qz?e+@~$j&dm")
+                        .username("root-dev-sqluser")
+                        .driverClassName("com.mysql.cj.jdbc.Driver")
+                        .build();
+            case "staging":
+                return null;
+            case "uat":
+                return null;
+            case "main":
+               return null;
+        }
+        return null;
     }
 
     //The multidatasource configuration
@@ -64,8 +99,9 @@ public class CarrierDataSource {
     @Bean(name = "multiRoutingDataSource")
     public DataSource multiRoutingDataSource() {
         Map<Object, Object> targetDataSources = new HashMap<>();
-        targetDataSources.put(1L, client02DataSource());
-        targetDataSources.put(2L, client03DataSource());
+        targetDataSources.put(1L, client01DataSource());
+        targetDataSources.put(2L, client02DataSource());
+        targetDataSources.put(3L, client03DataSource());
         MultiRoutingDataSource multiRoutingDataSource
                 = new MultiRoutingDataSource();
         multiRoutingDataSource.setDefaultTargetDataSource(client02DataSource());

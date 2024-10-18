@@ -1,6 +1,7 @@
 package com.example.SpringApi.DataSource;
 
 import jakarta.persistence.EntityManagerFactory;
+import org.example.CommonHelpers.EnvironmentHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -38,12 +39,22 @@ public class CentralDataSourceConfig {
     @Primary
     @Bean(name = "centralDataSource")
     public DataSource centralDataSource() {
-        return DataSourceBuilder.create()
-                .url("jdbc:mysql://35.237.130.224:3306/CentralDatabase")
-                .password("uUS2qz?e+@~$j&dm")
-                .username("root-dev-sqluser")
-                .driverClassName("com.mysql.cj.jdbc.Driver")
-                .build();
+        switch(EnvironmentHelper.getCurrentGitBranch()){
+            case "development":
+                return DataSourceBuilder.create()
+                        .url("jdbc:mysql://35.237.130.224:3306/CentralDatabase")
+                        .password("uUS2qz?e+@~$j&dm")
+                        .username("root-dev-sqluser")
+                        .driverClassName("com.mysql.cj.jdbc.Driver")
+                        .build();
+            case "staging":
+                return null;
+            case "uat":
+                return null;
+            case "main":
+                return null;
+        }
+        return null;
     }
 
     @Primary
