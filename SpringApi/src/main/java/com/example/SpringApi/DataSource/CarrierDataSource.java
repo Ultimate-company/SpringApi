@@ -46,7 +46,7 @@ public class CarrierDataSource {
                 totalClients = 7;
                 for (int i = 1; i <= totalClients; i++) {
                     targetDataSources.put((long) i, DataSourceBuilder.create()
-                            .url("jdbc:mysql://uc-dev-mysql:3307/Client_" + String.format("%02d", i))
+                            .url("jdbc:mysql://host.docker.internal:3307/Client_" + String.format("%02d", i))
                             .password("root")
                             .username("root")
                             .driverClassName("com.mysql.cj.jdbc.Driver")
