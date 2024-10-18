@@ -39,7 +39,7 @@ public class CentralDataSourceConfig {
     @Bean(name = "centralDataSource")
     public DataSource centralDataSource() {
         return DataSourceBuilder.create()
-                .url("jdbc:mysql://localhost:3307/CentralDatabase")
+                .url("jdbc:mysql://uc-dev-mysql:3307/CentralDatabase")
                 .password("root")
                 .username("root")
                 .driverClassName("com.mysql.cj.jdbc.Driver")
