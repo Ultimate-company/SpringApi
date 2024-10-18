@@ -34,4 +34,4 @@ WORKDIR /app
 COPY --from=build /usr/src/app/SpringApi/SpringApi/target/SpringApi-0.0.1-SNAPSHOT.jar /app/SpringApi-0.0.1-SNAPSHOT.jar
 
 # Define the command to run the application
-CMD ["java", "-jar", "SpringApi-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-Dspring.profiles.active=development", "-jar", "SpringApi-0.0.1-SNAPSHOT.jar"]
