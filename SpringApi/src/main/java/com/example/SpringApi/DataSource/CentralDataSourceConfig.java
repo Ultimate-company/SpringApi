@@ -37,9 +37,13 @@ public class CentralDataSourceConfig {
 
     @Primary
     @Bean(name = "centralDataSource")
-    @ConfigurationProperties(prefix = "spring.datasource.central")
     public DataSource centralDataSource() {
-        return DataSourceBuilder.create().build();
+        return DataSourceBuilder.create()
+                .url("jdbc:mysql://localhost:3307/CentralDatabase")
+                .password("root")
+                .username("root")
+                .driverClassName("com.mysql.cj.jdbc.Driver")
+                .build();
     }
 
     @Primary
