@@ -96,7 +96,6 @@ public class CarrierDataSource {
         return em;
     }
 
-    @Primary
     @Bean(name = "multiTransactionManager")
     public PlatformTransactionManager multiTransactionManager(Environment environment) {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
@@ -111,7 +110,6 @@ public class CarrierDataSource {
         LocalSessionFactoryBean sessionFactoryBean = new LocalSessionFactoryBean();
         sessionFactoryBean.setDataSource(multiRoutingDataSource(environment));
         sessionFactoryBean.setPackagesToScan(PACKAGE_SCAN);
-
         sessionFactoryBean.setHibernateProperties(hibernateProperties());
         return sessionFactoryBean;
     }
