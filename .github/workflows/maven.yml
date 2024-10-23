@@ -1,11 +1,3 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Java CI with Maven
 
 on:
@@ -24,16 +16,42 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Install Maven
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y maven
+
+      - name: Clone SpringModels repository
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # Use the secret for the GitHub token
+        run: |
+          git clone https://$GH_TOKEN@github.com/nahushr18/SpringModels.git
+          cd SpringModels
+          git checkout development
+
+      - name: Build SpringModels with Maven
+        run: |
+          cd SpringModels
+          mvn clean install
+
+      - name: Copy JAR to SpringApi/libs
+        run: |
+          mkdir -p SpringApi/libs
+          cp SpringModels/target/SpringModels-1.0-SNAPSHOT.jar SpringApi/libs/SpringModels-1.0-SNAPSHOT.jar
+
+      - name: Build SpringApi with Maven
+        run: |
+          cd SpringApi
+          mvn clean package

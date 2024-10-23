@@ -48,6 +48,13 @@ public class CentralDataSourceConfig {
                         .username("root")
                         .driverClassName("com.mysql.cj.jdbc.Driver")
                         .build();
+            case "localhost":
+                return DataSourceBuilder.create()
+                        .url("jdbc:mysql://localhost:3307/CentralDatabase")
+                        .password("root")
+                        .username("root")
+                        .driverClassName("com.mysql.cj.jdbc.Driver")
+                        .build();
             case "staging":
                return null;
             case "uat":
