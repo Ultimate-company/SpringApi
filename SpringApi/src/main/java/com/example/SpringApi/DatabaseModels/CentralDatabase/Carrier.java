@@ -27,9 +27,6 @@ public class Carrier {
     @Column(name = "DatabaseName", nullable = false, updatable = false)
     private String databaseName;
 
-    @Column(name = "AwsApiKey")
-    private String awsApikey;
-
     @Column(name = "SendGridApiKey")
     private String sendgridApikey;
 
@@ -44,15 +41,6 @@ public class Carrier {
 
     @Column(name = "Website", nullable = false)
     private String website;
-
-    @Column(name = "AwsCloudFrontUrl", nullable = false)
-    private String awsCloudFrontUrl;
-
-    @Column(name = "AwsBucketname", nullable = false)
-    private String awsBucketName;
-
-    @Column(name = "AwsSecretkey", nullable = false)
-    private String awsSecretKey;
 
     @Column(name = "SendgridSenderName", nullable = false)
     private String sendgridSenderName;
@@ -83,6 +71,9 @@ public class Carrier {
 
     @Column(name = "IssueTypes")
     private String issueTypes;
+
+    @Column(name = "BoxDeveloperToken")
+    private String boxDeveloperToken;
 
     // Tracking Fields
     @CreationTimestamp

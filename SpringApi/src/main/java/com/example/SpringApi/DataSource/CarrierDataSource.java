@@ -53,6 +53,17 @@ public class CarrierDataSource {
                             .build());
                 }
                 break;
+            case "localhost":
+                totalClients = 7;
+                for (int i = 1; i <= totalClients; i++) {
+                    targetDataSources.put((long) i, DataSourceBuilder.create()
+                            .url("jdbc:mysql://localhost:3307/Client_" + String.format("%02d", i))
+                            .password("root")
+                            .username("root")
+                            .driverClassName("com.mysql.cj.jdbc.Driver")
+                            .build());
+                }
+                break;
             case "staging":
                 totalClients = 0;
                 for (int i = 1; i <= totalClients; i++) {
