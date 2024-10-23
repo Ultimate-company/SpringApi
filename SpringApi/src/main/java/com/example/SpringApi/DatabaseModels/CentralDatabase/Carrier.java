@@ -72,9 +72,6 @@ public class Carrier {
     @Column(name = "IssueTypes")
     private String issueTypes;
 
-    @Column(name = "BoxDeveloperToken")
-    private String boxDeveloperToken;
-
     // Tracking Fields
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
