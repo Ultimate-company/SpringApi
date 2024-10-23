@@ -27,6 +27,9 @@ import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CentralDatabaseTranslators.Interfaces.ICarrierSubTranslator;
 import org.example.Translators.CentralDatabaseTranslators.Interfaces.IUserLogSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,12 +118,17 @@ public class CarrierDataAccessor extends BaseDataAccessor implements ICarrierSub
 
     @Override
     public Response<PaginationBaseResponseModel<Carrier>> getCarriersInBatches(GetCarriersRequestModel getCarriersRequestModel) {
-        List<com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier> carriers = carrierRepository.findByUserIdAndNameContains(getCarriersRequestModel.getUserId(), getCarriersRequestModel.getFilterExpr());
+        Page<com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier> carriers = carrierRepository.findByUserIdAndNameContains(getCarriersRequestModel.getUserId(),
+                getCarriersRequestModel.getFilterExpr(),
+                PageRequest.of(getCarriersRequestModel.getStart() / (getCarriersRequestModel.getEnd() - getCarriersRequestModel.getStart()),
+                        getCarriersRequestModel.getEnd() - getCarriersRequestModel.getStart(),
+                        Sort.by("name").ascending()));
+
         long totalDataCount = carrierRepository.countByUserIdAndNameContains(getCarriersRequestModel.getUserId(), getCarriersRequestModel.getFilterExpr());
 
         PaginationBaseResponseModel<Carrier> paginationBaseResponseModel = new PaginationBaseResponseModel<>();
-        if (carriers != null && !carriers.isEmpty()) {
-            paginationBaseResponseModel.setData(HelperUtils.copyFields(carriers, Carrier.class));
+        if (!carriers.isEmpty()) {
+            paginationBaseResponseModel.setData(HelperUtils.copyFields(carriers.getContent(), Carrier.class));
             paginationBaseResponseModel.setTotalDataCount(totalDataCount);
         } else {
             paginationBaseResponseModel.setData(new ArrayList<>());
