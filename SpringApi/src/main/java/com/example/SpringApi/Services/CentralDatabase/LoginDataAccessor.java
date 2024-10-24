@@ -19,10 +19,12 @@ import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CentralDatabaseTranslators.Interfaces.ILoginSubTranslator;
 import org.example.Translators.CentralDatabaseTranslators.Interfaces.IUserLogSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.io.InputStream;
 import java.util.*;
 
 @Service
@@ -38,13 +40,32 @@ public class LoginDataAccessor implements ILoginSubTranslator {
     public LoginDataAccessor(UserRepository userRepository,
                              GoogleUserRepository googleUserRepository,
                              UserCarrierPermissionMappingRepository userCarrierPermissionMappingRepository,
-                             UserLogDataAccessor userLogDataAccessor) {
+                             UserLogDataAccessor userLogDataAccessor,
+                             Environment environment) {
         this.userRepository = userRepository;
         this.googleUserRepository = googleUserRepository;
         this.userCarrierPermissionMappingRepository = userCarrierPermissionMappingRepository;
         this.userLogDataAccessor = userLogDataAccessor;
-        this.emailTemplates = new EmailTemplates("", "" , "");
         this.jwtTokenProvider = new JwtTokenProvider();
+
+        String profile = environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default";
+        String sendGridSenderName = "";
+        String sendGridFromAddress = "";
+        String sendGridApiKey = "";
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("application-" + profile + ".properties")) {
+            Properties prop = new Properties();
+            if (input != null) {
+                prop.load(input);
+                sendGridSenderName =  prop.getProperty("SENDGRID_SENDER_NAME");
+                sendGridFromAddress =  prop.getProperty("SENDGRID_FROM_ADDRESS");
+                sendGridApiKey = prop.getProperty("SENDGRID_API_KEY");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        finally{
+            this.emailTemplates = new EmailTemplates(sendGridSenderName, sendGridFromAddress ,sendGridApiKey);
+        }
     }
 
     private Pair<String, Boolean> validateSignUp(org.example.Models.CommunicationModels.CentralModels.User user) {
