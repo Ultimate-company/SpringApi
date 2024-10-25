@@ -16,7 +16,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("select u from User u join UserCarrierMapping ucm on u.userId = ucm.userId " +
             "where ucm.carrierId = :carrierId " +
             "and (:selectedUsers IS NULL OR u.userId IN (:selectedUsers)) " +
-            "and u.emailConfirmed " +
             "and (:includeDeleted = true OR u.deleted = false) " +
             "AND (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +

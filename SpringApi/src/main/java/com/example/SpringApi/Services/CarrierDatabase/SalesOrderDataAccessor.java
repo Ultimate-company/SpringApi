@@ -132,7 +132,6 @@ public class SalesOrderDataAccessor extends BaseDataAccessor implements ISalesOr
         Map<String, Object> templateData = new HashMap<>();
 
         // fill in the markers
-        templateData.put("companyLogo", carrier.getImage());
         templateData.put("companyName", carrier.getName());
         templateData.put("fullAddress", carrier.getSendgridEmailAddress());
         templateData.put("salesOrder", salesOrder);

@@ -22,6 +22,7 @@ public class ErrorMessages {
         public static final String ER004 = "There was an error fetching the carrier based on the wildcards.";
         public static final String ER005 = "Wilcard and api access key is required.";
         public static final String ER006 = "Invalid Credentials";
+        public static final String ER007 = "Invalid Google Credentials Id";
     }
 
     public static class LoginErrorMessages {
@@ -77,6 +78,7 @@ public class ErrorMessages {
         public static final String ER007 = "User role is required and should be one of the following: .";
         public static final String ER008 = "Date of birth is required and should be valid.";
         public static final String ER009 = "Phone number is required and should be valid.";
+        public static final String ER010 = "Failed to upload user profile picture.";
     }
 
     public static class UserGroupErrorMessages{

@@ -3,10 +3,10 @@ package com.example.SpringApi.Services.CentralDatabase;
 import com.example.SpringApi.Authentication.JwtTokenProvider;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.WebTemplateCarrierMapping;
 import com.example.SpringApi.ErrorMessages;
+import com.example.SpringApi.Repository.CentralDatabase.GoogleCredRepository;
 import com.example.SpringApi.Repository.CentralDatabase.WebTemplateCarrierMappingRepository;
 import com.example.SpringApi.Services.BaseDataAccessor;
 import com.example.SpringApi.SuccessMessages;
-import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.GsonBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import org.example.Adapters.DateAdapter;
@@ -18,8 +18,10 @@ import com.example.SpringApi.DatabaseModels.CentralDatabase.UserCarrierMapping;
 import org.example.CommonHelpers.HelperUtils;
 import org.example.CommonHelpers.JiraHelper;
 import org.example.Models.CommunicationModels.CentralModels.Carrier;
+import org.example.Models.CommunicationModels.CentralModels.GoogleCred;
 import org.example.Models.RequestModels.GridRequestModels.GetCarriersRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.CarrierByWebTemplateWildCardResponse;
+import org.example.Models.ResponseModels.ApiResponseModels.GetCarrierResponseModel;
 import org.example.Models.ResponseModels.ApiResponseModels.PaginationBaseResponseModel;
 import org.example.Models.ResponseModels.JiraResponseModels.CreateIssueTypeResponseModel;
 import org.example.Models.ResponseModels.JiraResponseModels.GetIssueTypesResponseModel;
@@ -30,7 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -44,6 +45,7 @@ public class CarrierDataAccessor extends BaseDataAccessor implements ICarrierSub
     private final CarrierRepository carrierRepository;
     private final UserCarrierMappingRepository userCarrierMappingRepository;
     private final WebTemplateCarrierMappingRepository webTemplateCarrierMappingRepository;
+    private final GoogleCredRepository googleCredRepository;
     private final IUserLogSubTranslator userLogDataAccessor;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -51,6 +53,7 @@ public class CarrierDataAccessor extends BaseDataAccessor implements ICarrierSub
     public CarrierDataAccessor(CarrierRepository carrierRepository,
                                UserCarrierMappingRepository userCarrierMappingRepository,
                                WebTemplateCarrierMappingRepository webTemplateCarrierMappingRepository,
+                               GoogleCredRepository googleCredRepository,
                                UserLogDataAccessor userLogDataAccessor,
                                HttpServletRequest request) {
         super(request, carrierRepository);
@@ -58,6 +61,7 @@ public class CarrierDataAccessor extends BaseDataAccessor implements ICarrierSub
         this.userCarrierMappingRepository = userCarrierMappingRepository;
         this.userLogDataAccessor = userLogDataAccessor;
         this.webTemplateCarrierMappingRepository = webTemplateCarrierMappingRepository;
+        this.googleCredRepository = googleCredRepository;
         this.jwtTokenProvider = new JwtTokenProvider();
     }
 
@@ -94,18 +98,29 @@ public class CarrierDataAccessor extends BaseDataAccessor implements ICarrierSub
     }
 
     @Override
-    public Response<Carrier> getCarrierDetailsById(long carrierId) {
+    public Response<GetCarrierResponseModel> getCarrierDetailsById(long carrierId) {
         if (carrierId != getCarrierId()) {
             return new Response<>(false, ErrorMessages.Unauthorized, null);
         }
 
-        return carrierRepository.findById(carrierId)
-                .map(carrier -> {
-                    syncJiraWithDB(carrierId);
-                    Carrier carrierDetails = HelperUtils.copyFields(carrier, Carrier.class);
-                    return new Response<>(true, SuccessMessages.CarrierSuccessMessages.GetCarrier, carrierDetails);
-                })
-                .orElseGet(() -> new Response<>(false, ErrorMessages.CarrierErrorMessages.InvalidId, null));
+        // fetch carrier
+        Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier> carrier = carrierRepository.findById(carrierId);
+        if (carrier.isEmpty()) {
+            return new Response<>(false, ErrorMessages.CarrierErrorMessages.InvalidId, null);
+        }
+
+        // fetch google creds for carrier
+        Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(carrier.get().getGoogleCredId());
+        if (googleCred.isEmpty()) {
+            return new Response<>(false, ErrorMessages.CarrierErrorMessages.ER007, null);
+        }
+
+        GetCarrierResponseModel getCarrierResponseModel = new GetCarrierResponseModel()
+                .setCarrier(HelperUtils.copyFields(carrier.get(), Carrier.class))
+                .setGoogleCred(HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
+
+        syncJiraWithDB(carrierId);
+        return new Response<>(true, SuccessMessages.CarrierSuccessMessages.GetCarrier, getCarrierResponseModel);
     }
 
     @Override
@@ -219,7 +234,6 @@ public class CarrierDataAccessor extends BaseDataAccessor implements ICarrierSub
                     .setCarrier(new Carrier()
                             .setCarrierId(webTemplateCarrierMapping.getCarrierId())
                             .setName(carrier.get().getName())
-                            .setImage(carrier.get().getImage())
                             .setWebsite(carrier.get().getWebsite()))
                     .setWildCard(webTemplateCarrierMapping.getWildCard())
                     .setWebTemplateId(webTemplateCarrierMapping.getWebTemplateId())

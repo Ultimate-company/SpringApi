@@ -1,7 +1,6 @@
 package com.example.SpringApi.Services.CentralDatabase;
 
 import com.example.SpringApi.DatabaseModels.CarrierDatabase.*;
-import com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.User;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.UserCarrierMapping;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.UserCarrierPermissionMapping;
@@ -10,23 +9,24 @@ import com.example.SpringApi.Repository.CarrierDatabase.AddressRepository;
 import com.example.SpringApi.Repository.CarrierDatabase.UserGroupRepository;
 import com.example.SpringApi.Repository.CarrierDatabase.PermissionRepository;
 import com.example.SpringApi.Repository.CarrierDatabase.UserGroupsUsersMapRepository;
-import com.example.SpringApi.Repository.CentralDatabase.CarrierRepository;
-import com.example.SpringApi.Repository.CentralDatabase.UserCarrierMappingRepository;
-import com.example.SpringApi.Repository.CentralDatabase.UserCarrierPermissionMappingRepository;
-import com.example.SpringApi.Repository.CentralDatabase.UserRepository;
+import com.example.SpringApi.Repository.CentralDatabase.*;
 import com.example.SpringApi.Services.BaseDataAccessor;
 import com.example.SpringApi.SuccessMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ApiRoutes;
 import org.example.CommonHelpers.*;
+import org.example.Models.CommunicationModels.CentralModels.Carrier;
+import org.example.Models.CommunicationModels.CentralModels.GoogleCred;
 import org.example.Models.RequestModels.ApiRequestModels.ImportUsersRequestModel;
 import org.example.Models.RequestModels.ApiRequestModels.UsersRequestModel;
 import org.example.Models.RequestModels.GridRequestModels.GetUsersRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.PaginationBaseResponseModel;
+import org.example.Models.ResponseModels.ApiResponseModels.UserResponseModel;
 import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CentralDatabaseTranslators.Interfaces.IUserSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -46,8 +47,11 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     private final UserCarrierMappingRepository userCarrierMappingRepository;
     private final UserGroupsUsersMapRepository userGroupsUsersMapRepository;
     private final PermissionRepository permissionRepository;
+    private final GoogleCredRepository googleCredRepository;
     private final UserCarrierPermissionMappingRepository userCarrierPermissionMappingRepository;
     private EmailTemplates emailTemplates;
+    private Environment environment;
+
     @Autowired
     public UserDataAccessor(HttpServletRequest request,
                             UserRepository userRepository,
@@ -58,7 +62,9 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
                             UserLogDataAccessor userLogDataAccessor,
                             UserGroupsUsersMapRepository userGroupsUsersMapRepository,
                             PermissionRepository permissionRepository,
-                            UserCarrierPermissionMappingRepository userCarrierPermissionMappingRepository) {
+                            GoogleCredRepository googleCredRepository,
+                            UserCarrierPermissionMappingRepository userCarrierPermissionMappingRepository,
+                            Environment environment) {
         super(request, carrierRepository);
         this.userRepository = userRepository;
         this.userCarrierMappingRepository = userCarrierMappingRepository;
@@ -67,7 +73,9 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
         this.userGroupRepository = userGroupRepository;
         this.userGroupsUsersMapRepository = userGroupsUsersMapRepository;
         this.permissionRepository = permissionRepository;
+        this.googleCredRepository = googleCredRepository;
         this.userCarrierPermissionMappingRepository = userCarrierPermissionMappingRepository;
+        this.environment = environment;
     }
     private boolean authorizedToFetchThisUserDetails(long requestedUserId){
         // both the user ids should be present in the same carrier.
@@ -161,21 +169,42 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     }
 
     @Override
-    public Response<org.example.Models.CommunicationModels.CentralModels.User> getUserById(long userId) {
+    public Response<UserResponseModel> getUserById(long userId) throws IOException {
         // check if the current user is authorized to fetch details for the given user.
         boolean authorized = authorizedToFetchThisUserDetails(userId);
         if(!authorized){
             return new Response<>(false, ErrorMessages.UserErrorMessages.Unauthorized, null);
         }
 
+        UserResponseModel userResponseModel = new UserResponseModel();
         Optional<User> user = userRepository.findById(userId);
-        return user.map(value -> new Response<>(true, SuccessMessages.UserSuccessMessages.GetUser, HelperUtils.copyFields(value, org.example.Models.CommunicationModels.CentralModels.User.class)))
-                .orElseGet(() -> new Response<>(false, ErrorMessages.UserErrorMessages.InvalidEmail, null));
+        if(user.isEmpty()) {
+            return new Response<>(false, ErrorMessages.UserErrorMessages.InvalidId, null);
+        }
+        userResponseModel.setUser(HelperUtils.copyFields(user.get(), org.example.Models.CommunicationModels.CentralModels.User.class));
+
+        // get the user profile picture if it exists
+        Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
+        if (googleCred.isPresent()) {
+            String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default")
+                    + "/"
+                    + getCarrierDetails().getDatabaseName()
+                    + "/UserProfiles"
+                    + "/" + user.get().getUserId() + "-" + user.get().getLastName() + ".png";
+
+            FirebaseHelper firebaseHelper = new FirebaseHelper(HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
+            byte[] byteImage = firebaseHelper.downloadFileAsBytesFromFirebase(filePath);
+            if(byteImage != null) {
+                userResponseModel.setProfilePictureBase64(Base64.getEncoder().encodeToString(byteImage));
+            }
+        }
+
+        return new Response<>(true, SuccessMessages.UserSuccessMessages.GetUser, userResponseModel);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Response<Long> createUser(UsersRequestModel usersRequestModel) {
+    public Response<Long> createUser(UsersRequestModel usersRequestModel) throws Exception {
         // check if the user is already in the system or no
         Response<Boolean> isEmailAvailableInSystemResponse = isEmailAvailableInSystem(usersRequestModel.getUser().getLoginName());
         if(isEmailAvailableInSystemResponse.isSuccess()){
@@ -240,16 +269,43 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
         userCarrierPermissionMapping.setCarrierId(getCarrierId());
         userCarrierPermissionMappingRepository.save(userCarrierPermissionMapping);
 
+        // fetch google creds for carrier
+        Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
+        if (googleCred.isEmpty()) {
+            throw new Exception(ErrorMessages.CarrierErrorMessages.ER007);
+        }
+
+        //upload the profile picture if present
+        if(!usersRequestModel.getProfilePictureBase64().isEmpty()
+        && !usersRequestModel.getProfilePictureBase64().isBlank()) {
+            String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default")
+                    + "/"
+                    + getCarrierDetails().getDatabaseName()
+                    + "/UserProfiles"
+                    + "/" + savedUser.getUserId() + "-" + savedUser.getLastName() + ".png";
+
+
+            FirebaseHelper firebaseHelper = new FirebaseHelper(HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
+            boolean isSuccess = firebaseHelper.uploadFileToFirebase(usersRequestModel.getProfilePictureBase64(), filePath);
+            if(!isSuccess) {
+                throw new Exception(ErrorMessages.UserErrorMessages.ER010);
+            }
+        }
+
         // send account confirmation email
-        Carrier carrier = getCarrierDetails();
-//        this.emailTemplates = new EmailTemplates(carrier.getSendgridSenderName(), carrier.getSendgridEmailAddress(), carrier.getSendgridApikey());
-//        Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendNewUserAccountConfirmation(savedUser.getUserId(),
-//                user.getToken(),
-//                user.getLoginName(),
-//                password);
-//        if(!sendAccountConfirmationEmailResponse.isSuccess()) {
-//            throw new Exception(sendAccountConfirmationEmailResponse.getMessage());
-//        }
+        com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier carrier = getCarrierDetails();
+        this.emailTemplates = new EmailTemplates(carrier.getSendgridSenderName(), carrier.getSendgridEmailAddress(), carrier.getSendgridApikey());
+        Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendNewUserAccountConfirmation(
+                environment,
+                HelperUtils.copyFields(carrier, Carrier.class),
+                HelperUtils.copyFields(googleCred.get(), GoogleCred.class),
+                savedUser.getUserId(),
+                savedUser.getToken(),
+                savedUser.getLoginName(),
+                password);
+        if(!sendAccountConfirmationEmailResponse.isSuccess()) {
+            throw new Exception(sendAccountConfirmationEmailResponse.getMessage());
+        }
 
         userLogDataAccessor.logData(getUserId(),
                 SuccessMessages.UserSuccessMessages.InsertUser +  " " + savedUser.getUserId(),
@@ -259,7 +315,7 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Response<Long> updateUser(UsersRequestModel usersRequestModel) {
+    public Response<Long> updateUser(UsersRequestModel usersRequestModel) throws Exception {
         // check if the current user is authorized to fetch details for the given user.
         boolean authorized = authorizedToFetchThisUserDetails(usersRequestModel.getUser().getUserId());
         if(!authorized){
@@ -320,6 +376,30 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
             userGroupsUsersMaps.add(userGroupsUsersMap);
         }
         userGroupsUsersMapRepository.saveAll(userGroupsUsersMaps);
+
+        // fetch google creds for carrier
+        Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
+        if (googleCred.isEmpty()) {
+            throw new Exception(ErrorMessages.CarrierErrorMessages.ER007);
+        }
+        FirebaseHelper firebaseHelper = new FirebaseHelper(HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
+        String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default")
+                + "/"
+                + getCarrierDetails().getDatabaseName()
+                + "/UserProfiles"
+                + "/" + userInDb.get().getUserId() + "-" + userInDb.get().getLastName() + ".png";
+
+        //upload the profile picture if present
+        if(!usersRequestModel.getProfilePictureBase64().isEmpty()
+                && !usersRequestModel.getProfilePictureBase64().isBlank()) {
+            boolean isSuccess = firebaseHelper.uploadFileToFirebase(usersRequestModel.getProfilePictureBase64(), filePath);
+            if(!isSuccess) {
+                throw new Exception(ErrorMessages.UserErrorMessages.ER010);
+            }
+        }
+        else {
+            firebaseHelper.deleteFile(filePath);
+        }
 
         //update permissions for user
         permissionRepository.save(HelperUtils.copyFields(usersRequestModel.getPermissions(), Permissions.class)); // permission id has to be passed over here
@@ -415,14 +495,24 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
             userPasswordMapping.put(savedUser, password);
         }
 
-        Carrier carrier = getCarrierDetails();
+        // fetch google creds for carrier
+        Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
+        if (googleCred.isEmpty()) {
+            throw new Exception(ErrorMessages.CarrierErrorMessages.ER007);
+        }
+
+        com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier carrier = getCarrierDetails();
         this.emailTemplates = new EmailTemplates(carrier.getSendgridSenderName(), carrier.getSendgridEmailAddress(), carrier.getSendgridApikey());
         for(Map.Entry<User, String> mapping : userPasswordMapping.entrySet()){
-            Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendNewUserAccountConfirmation(mapping.getKey().getUserId(),
+            // send account confirmation email
+            Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendNewUserAccountConfirmation(
+                    environment,
+                    HelperUtils.copyFields(carrier, Carrier.class),
+                    HelperUtils.copyFields(googleCred.get(), GoogleCred.class),
+                    mapping.getKey().getUserId(),
                     mapping.getKey().getToken(),
                     mapping.getKey().getLoginName(),
                     mapping.getValue());
-
             if(!sendAccountConfirmationEmailResponse.isSuccess()) {
                 throw new Exception(sendAccountConfirmationEmailResponse.getMessage());
             }

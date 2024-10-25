@@ -17,16 +17,12 @@ import org.example.Adapters.DateAdapter;
 import org.example.Adapters.LocalDateTimeAdapter;
 import org.example.ApiRoutes;
 import org.example.CommonHelpers.HelperUtils;
-import org.example.CommonHelpers.ImageHelper;
 import org.example.CommonHelpers.JiraHelper;
-import org.example.Models.CommunicationModels.CentralModels.User;
 import org.example.Models.RequestModels.ApiRequestModels.SupportRequestModel;
 import org.example.Models.ResponseModels.JiraResponseModels.*;
 import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CarrierDatabaseTranslators.Interfaces.ISupportSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -236,7 +232,7 @@ public class SupportDataAccessor extends BaseDataAccessor implements ISupportSub
         // clean the data
         Map<String, byte[]> images = new HashMap<>();
         for(Map.Entry<String, String> image: supportRequestModel.getImagesBase64().entrySet()) {
-            images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
+            //images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
         }
 
         // create ticket
@@ -271,7 +267,7 @@ public class SupportDataAccessor extends BaseDataAccessor implements ISupportSub
         // first add the attachment
         Map<String, byte[]> images = new HashMap<>();
         for(Map.Entry<String, String> image: supportRequestModel.getImagesBase64().entrySet()) {
-            images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
+           // images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
         }
         Response<List<CreateAttachmentResponseModel>> createAttachmentResponse = jiraHelper.addAttachment(ticketId, images);
         if(!createAttachmentResponse.isSuccess()) {
@@ -360,7 +356,7 @@ public class SupportDataAccessor extends BaseDataAccessor implements ISupportSub
         // clean the data
         Map<String, byte[]> images = new HashMap<>();
         for(Map.Entry<String, String> image: supportRequestModel.getImagesBase64().entrySet()) {
-            images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
+            //images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
         }
 
         Response<Boolean> editTicketResponse = jiraHelper.editTicket(ticketId, supportRequestModel.getJsonContent());
@@ -433,7 +429,7 @@ public class SupportDataAccessor extends BaseDataAccessor implements ISupportSub
         // first add the attachment
         Map<String, byte[]> images = new HashMap<>();
         for(Map.Entry<String, String> image: supportRequestModel.getImagesBase64().entrySet()) {
-            images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
+            //images.put(image.getKey(), ImageHelper.getByteArrayFromBase64ImageString(image.getValue()));
         }
         Response<List<CreateAttachmentResponseModel>> createAttachmentResponse = jiraHelper.addAttachment(ticketId, images);
         if(!createAttachmentResponse.isSuccess()) {

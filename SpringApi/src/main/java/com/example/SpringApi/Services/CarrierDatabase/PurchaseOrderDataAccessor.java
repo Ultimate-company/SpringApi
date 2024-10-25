@@ -87,7 +87,6 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
         Map<String, Object> templateData = new HashMap<>();
 
         // fill in the markers
-        templateData.put("companyLogo", carrier.getImage());
         templateData.put("companyName", carrier.getName());
         templateData.put("website", carrier.getWebsite());
         templateData.put("fullAddress", carrier.getSendgridEmailAddress());
