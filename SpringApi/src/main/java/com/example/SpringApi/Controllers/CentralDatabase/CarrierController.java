@@ -7,6 +7,7 @@ import org.example.Models.CommunicationModels.CentralModels.Carrier;
 import org.example.Models.CommunicationModels.CentralModels.WebTemplateCarrierMapping;
 import org.example.Models.RequestModels.GridRequestModels.GetCarriersRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.CarrierByWebTemplateWildCardResponse;
+import org.example.Models.ResponseModels.ApiResponseModels.GetCarrierResponseModel;
 import org.example.Models.ResponseModels.ApiResponseModels.PaginationBaseResponseModel;
 import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CentralDatabaseTranslators.Interfaces.ICarrierSubTranslator;
@@ -27,7 +28,7 @@ public class CarrierController {
 
     @PreAuthorize("@customAuthorization.validateToken()")
     @GetMapping(ApiRoutes.CarriersSubRoute.GET_CARRIER_DETAILS_BY_ID)
-    public ResponseEntity<Response<Carrier>> getCarrierDetailsById(long carrierId) {
+    public ResponseEntity<Response<GetCarrierResponseModel>> getCarrierDetailsById(long carrierId) {
         return ResponseEntity.ok(accessor.getCarrierDetailsById(carrierId));
     }
 

@@ -92,7 +92,7 @@ public class LoginDataAccessor implements ILoginSubTranslator {
         if(userResponse.isPresent())
         {
             User user = userResponse.get();
-            if(user.getApiKey().equals(loginRequestModel.getToken())){
+            if(user.getToken().equals(loginRequestModel.getToken())){
                 user.setEmailConfirmed(true);
                 userRepository.save(user);
                 userLogDataAccessor.logData(loginRequestModel.getUserId(), SuccessMessages.LoginSuccessMessages.UserEmailConfirmed, ApiRoutes.LoginSubRoute.CONFIRM_EMAIL);

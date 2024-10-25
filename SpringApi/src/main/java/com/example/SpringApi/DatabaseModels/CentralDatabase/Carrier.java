@@ -36,8 +36,8 @@ public class Carrier {
     @Column(name = "IsDeleted", nullable = false, updatable = false)
     private boolean isDeleted;
 
-    @Column(name = "Image", nullable = false)
-    private String image;
+    @Column(name = "SupportEmail", nullable = false)
+    private String supportEmail;
 
     @Column(name = "Website", nullable = false)
     private String website;
@@ -86,4 +86,8 @@ public class Carrier {
 
     @Column(name = "AuditUserId")
     private Long auditUserId;
+
+    // Fk's
+    @Column(name = "GoogleCredId")
+    private long googleCredId;
 }

@@ -58,9 +58,6 @@ public class User {
     @Column(name = "Token", nullable = false)
     private String token;
 
-    @Column(name = "Avatar")
-    private String avatar;
-
     @Column(name = "Dob", nullable = false)
     private Date dob;
 

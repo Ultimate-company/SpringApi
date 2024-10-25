@@ -5,6 +5,7 @@ import com.example.SpringApi.Services.CentralDatabase.UserDataAccessor;
 import org.example.Models.CommunicationModels.CarrierModels.Permissions;
 import org.example.Models.CommunicationModels.CentralModels.User;
 import org.example.Models.RequestModels.ApiRequestModels.UsersRequestModel;
+import org.example.Models.ResponseModels.ApiResponseModels.UserResponseModel;
 import org.example.Models.ResponseModels.Response;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -94,7 +96,7 @@ public class UserControllerTest {
     }
 
     @Test
-    public void testGetUserById(){
+    public void testGetUserById() throws IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
@@ -102,11 +104,11 @@ public class UserControllerTest {
         long userId = 1L;
 
         // mock the data accessor
-        Response<User> response = new Response<>(true, "Success", new User());
+        Response<UserResponseModel> response = new Response<>(true, "Success", new UserResponseModel());
         when(userDataAccessor.getUserById(any(Long.class))).thenReturn(response);
 
         // test the controller
-        ResponseEntity<Response<User>> responseEntity = userController.getUserById(userId);
+        ResponseEntity<Response<UserResponseModel>> responseEntity = userController.getUserById(userId);
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(200));
         assertThat(Objects.requireNonNull(responseEntity.getBody()).isSuccess()).isEqualTo(true);
         assertThat(Objects.requireNonNull(responseEntity.getBody()).getItem()).isNotNull();

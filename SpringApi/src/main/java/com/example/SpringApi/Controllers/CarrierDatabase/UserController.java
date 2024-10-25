@@ -9,6 +9,7 @@ import org.example.Models.RequestModels.ApiRequestModels.ImportUsersRequestModel
 import org.example.Models.RequestModels.ApiRequestModels.UsersRequestModel;
 import org.example.Models.RequestModels.GridRequestModels.GetUsersRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.PaginationBaseResponseModel;
+import org.example.Models.ResponseModels.ApiResponseModels.UserResponseModel;
 import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CentralDatabaseTranslators.Interfaces.IUserSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -48,13 +50,13 @@ public class UserController {
 
     @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.VIEW_USER_PERMISSION +"')")
     @GetMapping(ApiRoutes.UsersSubRoute.GET_USER_BY_ID)
-    public ResponseEntity<Response<User>> getUserById(@RequestParam long id) {
+    public ResponseEntity<Response<UserResponseModel>> getUserById(@RequestParam long id) throws IOException {
         return ResponseEntity.ok(accessor.getUserById(id));
     }
 
     @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.INSERT_USER_PERMISSION +"')")
     @PutMapping(ApiRoutes.UsersSubRoute.CREATE_USER)
-    public ResponseEntity<Response<Long>> createUser(@RequestBody UsersRequestModel usersRequestModel) {
+    public ResponseEntity<Response<Long>> createUser(@RequestBody UsersRequestModel usersRequestModel) throws Exception {
         return ResponseEntity.ok(accessor.createUser(usersRequestModel));
     }
 
@@ -66,7 +68,7 @@ public class UserController {
 
     @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.UPDATE_USER_PERMISSION +"')")
     @PostMapping(ApiRoutes.UsersSubRoute.UPDATE_USER)
-    public ResponseEntity<Response<Long>> updateUser(@RequestBody UsersRequestModel usersRequestModel) {
+    public ResponseEntity<Response<Long>> updateUser(@RequestBody UsersRequestModel usersRequestModel) throws Exception {
         return ResponseEntity.ok(accessor.updateUser(usersRequestModel));
     }
 
