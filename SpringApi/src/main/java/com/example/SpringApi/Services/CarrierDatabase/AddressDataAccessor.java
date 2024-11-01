@@ -22,7 +22,6 @@ import java.util.Optional;
 
 @Service
 public class AddressDataAccessor extends BaseDataAccessor implements IAddressSubTranslator {
-
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final UserLogDataAccessor userLogDataAccessor;
