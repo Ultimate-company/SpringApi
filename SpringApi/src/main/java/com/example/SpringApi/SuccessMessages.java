@@ -23,6 +23,7 @@ public class SuccessMessages {
         public static final String GetUser = "Successfully got user details.";
         public static final String GotUsers = "Successfully got users.";
     }
+
     public static class AddressSuccessMessages{
         // standard success messages
         public static final String InsertAddress = "Successfully inserted address.";
@@ -164,4 +165,9 @@ public class SuccessMessages {
         public static final String CreateTicket = "Successfully created ticket.";
     }
 
+    public static class UserGridPreferenceSuccessMessages {
+        // standard success messages
+        public static final String UpdateUserGridPreference = "Successfully updated user grid preferences.";
+        public static final String GetUserGridPreference = "Successfully got user grid preferences.";
+    }
 }
