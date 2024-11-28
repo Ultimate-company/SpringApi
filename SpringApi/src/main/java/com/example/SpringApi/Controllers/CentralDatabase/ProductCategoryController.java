@@ -29,6 +29,12 @@ public class ProductCategoryController {
     }
 
     @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.INSERT_PRODUCTS_PERMISSION +"')")
+    @GetMapping(ApiRoutes.ProductCategorySubRoute.FIND_CATEGORIES_WITHOUT_CHILDREN)
+    public ResponseEntity<Response<List<ProductCategory>>> findCategoriesWithoutChildren() {
+        return ResponseEntity.ok(accessor.findCategoriesWithoutChildren());
+    }
+
+    @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.INSERT_PRODUCTS_PERMISSION +"')")
     @GetMapping(ApiRoutes.ProductCategorySubRoute.GET_ROOT_CATEGORIES)
     public ResponseEntity<Response<List<ProductCategory>>> getRootCategories() {
         return ResponseEntity.ok(accessor.getRootCategories());

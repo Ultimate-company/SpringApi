@@ -1,14 +1,13 @@
 package com.example.SpringApi.Services;
 
 import com.example.SpringApi.Repository.CentralDatabase.CarrierRepository;
+import com.example.SpringApi.RequestContext;
 import jakarta.servlet.http.HttpServletRequest;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier;
-import com.example.SpringApi.DatabaseModels.CentralDatabase.User;
-import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Optional;
 
-//
+
 public class BaseDataAccessor {
     private final HttpServletRequest request;
     private final CarrierRepository carrierRepository;
@@ -31,7 +30,21 @@ public class BaseDataAccessor {
     }
 
     public Long getUserId() {  // Return type changed to Long to allow null
-        String auditUserId = request.getParameter("AuditUserId");
+        String auditUserId = null;
+
+        // Try getting AuditUserId from the request
+        try {
+            auditUserId = request.getParameter("AuditUserId");
+        } catch (Exception e) {
+            // Handle potential exception or log it if needed
+        }
+
+        // If not found in request, get it from RequestContext
+        if (auditUserId == null) {
+            auditUserId = RequestContext.get("auditUserId");
+        }
+
+        // If AuditUserId is found, return it as Long, otherwise return null
         if (auditUserId != null) {
             return Long.parseLong(auditUserId);
         } else {
@@ -40,7 +53,21 @@ public class BaseDataAccessor {
     }
 
     public Long getCarrierId() {  // Return type changed to Long to allow null
-        String carrierId = request.getParameter("CarrierId");
+        String carrierId = null;
+
+        // Try getting CarrierId from the request
+        try {
+            carrierId = request.getParameter("CarrierId");
+        } catch (Exception e) {
+            // Handle potential exception or log it if needed
+        }
+
+        // If not found in request, get it from RequestContext
+        if (carrierId == null) {
+            carrierId = RequestContext.get("carrierId");
+        }
+
+        // If CarrierId is found, return it as Long, otherwise return null
         if (carrierId != null) {
             return Long.parseLong(carrierId);
         } else {
@@ -49,46 +76,25 @@ public class BaseDataAccessor {
     }
 
     public Long getWebTemplateId() {  // Return type changed to Long to allow null
-        String webTemplateId = request.getParameter("WebTemplateId");
+        String webTemplateId = null;
+
+        // Try getting WebTemplateId from the request
+        try {
+            webTemplateId = request.getParameter("WebTemplateId");
+        } catch (Exception e) {
+            // Handle potential exception or log it if needed
+        }
+
+        // If not found in request, get it from RequestContext
+        if (webTemplateId == null) {
+            webTemplateId = RequestContext.get("webTemplateId");
+        }
+
+        // If WebTemplateId is found, return it as Long, otherwise return null
         if (webTemplateId != null) {
             return Long.parseLong(webTemplateId);
         } else {
             return null;
         }
-    }
-
-    protected <T> Specification<T> getWhereConditionForJpa(String columnName, String condition, String filterExpr) {
-        return (root, query, cb) -> switch (condition) {
-            case "equals" -> cb.equal(root.get(columnName), filterExpr);
-            case "notEquals" -> cb.notEqual(root.get(columnName), filterExpr);
-            case "startsWith" -> cb.like(root.get(columnName), filterExpr + "%");
-            case "endsWith" -> cb.like(root.get(columnName), "%" + filterExpr);
-            case "contains" -> cb.like(root.get(columnName), "%" + filterExpr + "%");
-            default -> throw new IllegalArgumentException("Unknown condition: " + condition);
-        };
-    }
-
-    protected Specification<User> getWhereCaseConditionForDeletedItemsForJpa(boolean includeDeleted) {
-        return (root, query, cb) -> {
-            if (includeDeleted) {
-                // If deleted items should be included, return a condition that always evaluates to true.
-                return cb.conjunction(); // This is equivalent to '1 = 1' in SQL.
-            } else {
-                // If deleted items should not be included, return a condition that checks the 'isDeleted' field.
-                return cb.isFalse(root.get("IsDeleted"));
-            }
-        };
-    }
-
-    protected Specification<User> getWhereCaseConditionForGuestUsersForJpa(boolean includeGuest) {
-        return (root, query, cb) -> {
-            if (includeGuest) {
-                // If deleted items should be included, return a condition that always evaluates to true.
-                return cb.conjunction(); // This is equivalent to '1 = 1' in SQL.
-            } else {
-                // If deleted items should not be included, return a condition that checks the 'isDeleted' field.
-                return cb.isFalse(root.get("IsGuest"));
-            }
-        };
     }
 }

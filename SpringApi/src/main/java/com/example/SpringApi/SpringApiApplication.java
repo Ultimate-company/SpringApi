@@ -5,8 +5,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-@SpringBootApplication(exclude = {SecurityAutoConfiguration.class})
+import java.util.concurrent.Executor;
+
+@SpringBootApplication
 @ComponentScan(basePackages =
 		{
 				// beans from authentication
@@ -27,6 +32,7 @@ import org.springframework.context.annotation.ComponentScan;
 				// scan the services
 				"com.example.SpringApi.Services.CentralDatabase",
 				"com.example.SpringApi.Services.CarrierDatabase",
+				"com.example.SpringApi.Services",
 
 				// scan the datasource beans
 				"com.example.SpringApi.DataSource",
@@ -38,10 +44,20 @@ import org.springframework.context.annotation.ComponentScan;
 				"com.example.SpringApi.DatabaseModels.CarrierDatabase"
 		}
 		)
+@EnableAsync
 public class SpringApiApplication {
-
 	public static void main(String[] args) {
 		SpringApplication.run(SpringApiApplication.class, args);
 	}
 
+	@Bean(name = "asyncExecutor")
+	public Executor asyncExecutor()  {
+		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setCorePoolSize(3);
+		executor.setMaxPoolSize(3);
+		executor.setQueueCapacity(100);
+		executor.setThreadNamePrefix("AsynchThread-");
+		executor.initialize();
+		return executor;
+	}
 }

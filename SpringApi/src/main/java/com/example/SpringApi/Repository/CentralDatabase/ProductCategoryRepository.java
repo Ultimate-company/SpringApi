@@ -16,5 +16,8 @@ public interface ProductCategoryRepository extends JpaRepository<ProductCategory
     @Query("select p from ProductCategory p where p.parentId is null")
     List<ProductCategory> findRootCategories();
 
+    @Query("SELECT p FROM ProductCategory p WHERE p.id NOT IN (SELECT pc.parentId FROM ProductCategory pc WHERE pc.parentId IS NOT NULL)")
+    List<ProductCategory> findCategoriesWithoutChildren();
+
     ProductCategory findProductCategoryByName(String name);
 }

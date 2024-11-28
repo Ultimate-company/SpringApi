@@ -16,7 +16,7 @@ public class Lead {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "LeadId", nullable = false)
-    private long leadId;
+    private Long leadId;
 
     @Column(name = "AnnualRevenue")
     private String annualRevenue;

@@ -29,7 +29,6 @@ public class PackageDataAccessor extends BaseDataAccessor implements IPackageSub
     private final PackageRepository packageRepository;
     private final UserLogDataAccessor userLogDataAccessor;
 
-
     @Autowired
     public PackageDataAccessor(HttpServletRequest request,
                                CarrierRepository carrierRepository,
@@ -128,9 +127,9 @@ public class PackageDataAccessor extends BaseDataAccessor implements IPackageSub
                 paginationBaseRequestModel.getCondition(),
                 paginationBaseRequestModel.getFilterExpr(),
                 paginationBaseRequestModel.isIncludeDeleted(),
-                PageRequest.of(paginationBaseRequestModel.getStart() / paginationBaseRequestModel.getEnd() - paginationBaseRequestModel.getStart(),
+                PageRequest.of(paginationBaseRequestModel.getStart() / (paginationBaseRequestModel.getEnd() - paginationBaseRequestModel.getStart()),
                         paginationBaseRequestModel.getEnd() - paginationBaseRequestModel.getStart(),
-                        Sort.by("packageId").ascending()));
+                        Sort.by("packageId").descending()));
 
         PaginationBaseResponseModel<org.example.Models.CommunicationModels.CarrierModels.Package> paginationBaseResponseModel = new PaginationBaseResponseModel<>();
         paginationBaseResponseModel.setData(HelperUtils.copyFields(packages.getContent(), org.example.Models.CommunicationModels.CarrierModels.Package.class));

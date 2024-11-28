@@ -27,6 +27,9 @@ public class ProductCategory {
     @Column(name = "ParentId")
     private Long parentId;
 
+    @Column(name = "IsEnd", nullable = false)
+    private boolean end;
+
     @CreationTimestamp
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;

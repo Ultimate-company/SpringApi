@@ -164,6 +164,8 @@ public class ErrorMessages {
 
         // Additional error messages
         public static final String ER001 = "Pickup location is required and should be valid.";
+        public static final String ER002 = "Email on address is required and should be valid.";
+        public static final String ER003 = "Phone on address is required and should be valid.";
     }
 
     public static class PromoErrorMessages{

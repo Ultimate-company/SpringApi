@@ -212,7 +212,12 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Response<Long> createPurchaseOrder(PurchaseOrderRequestModel purchaseOrderRequestModel) {
+        // clean the data
         purchaseOrderRequestModel.getAddress().setPhoneOnAddress(DataCleaner.cleanPhone(purchaseOrderRequestModel.getAddress().getPhoneOnAddress()));
+        if (purchaseOrderRequestModel.getPurchaseOrder().getCreatedByUserId() == null) {
+            purchaseOrderRequestModel.getPurchaseOrder().setCreatedByUserId(getUserId());
+        }
+
         Pair<String, Boolean> validation = validatePurchaseOrder(HelperUtils.copyFields(purchaseOrderRequestModel.getPurchaseOrder(), PurchaseOrder.class),
                 HelperUtils.copyFields(purchaseOrderRequestModel.getAddress(), Address.class),
                 purchaseOrderRequestModel.getProductIdQuantityMapping());

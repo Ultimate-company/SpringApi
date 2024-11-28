@@ -1,4 +1,4 @@
-package com.example.SpringApi.Controllers.CarrierDatabase;
+package com.example.SpringApi.Controllers.CentralDatabase;
 
 import com.example.SpringApi.Services.CentralDatabase.UserDataAccessor;
 import org.example.ApiRoutes;
@@ -89,11 +89,5 @@ public class UserController {
     @PostMapping(ApiRoutes.UsersSubRoute.GET_USERS_IN_CARRIER_IN_BATCHES)
     public ResponseEntity<Response<PaginationBaseResponseModel<User>>> fetchUsersInCarrierInBatches(@RequestBody GetUsersRequestModel getUsersRequestModel) {
         return ResponseEntity.ok(accessor.fetchUsersInCarrierInBatches(getUsersRequestModel));
-    }
-
-    @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.INSERT_USER_PERMISSION +"')")
-    @PostMapping(ApiRoutes.UsersSubRoute.IMPORT_USERS)
-    public ResponseEntity<Response<String>> importUsers(@RequestBody ImportUsersRequestModel importUsersRequestModel) throws Exception {
-        return ResponseEntity.ok(accessor.importUsers(importUsersRequestModel));
     }
 }

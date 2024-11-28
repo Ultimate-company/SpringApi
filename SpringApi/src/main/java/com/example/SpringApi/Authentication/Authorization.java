@@ -47,7 +47,7 @@ public class Authorization{
         this.webTemplateCarrierMappingRepository = WebTemplateCarrierMappingRepository;
     }
 
-    private String getJwtFromRequest() {
+    public String getJwtFromRequest() {
         String bearerToken = request.getHeader("Authorization");
         if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")){
             return bearerToken.substring(7);
@@ -197,20 +197,26 @@ public class Authorization{
         String carrierId = "";
 
         // Check if the request contains the "AuditUserId" parameter
-        if (request.getParameter("AuditUserId") != null) {
-            // Try to retrieve the value of "AuditUserId" from the request query parameters
-            auditUserId = request.getParameter("AuditUserId");
+        try {
+            if (request.getParameter("AuditUserId") != null) {
+                // Try to retrieve the value of "AuditUserId" from the request query parameters
+                auditUserId = request.getParameter("AuditUserId");
+            }
         }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
 
         // Check if the request contains the "CarrierId" parameter
         if (request.getParameter("CarrierId") != null) {
             // Ignore the value of "CarrierId" as it is not used in this method
             carrierId = request.getParameter("CarrierId");
         }
-        return isAllowed(auditUserId, carrierId, userPermission);
+        return isAllowed(getJwtFromRequest(), auditUserId, carrierId, userPermission);
     }
 
-    private boolean isAllowed(String auditUserIdStr, String carrierIdStr, String userPermission) {
+    public boolean isAllowed(String token,String auditUserIdStr, String carrierIdStr, String userPermission) {
         long carrierId = validateCarrierId(carrierIdStr);
         long auditUserId = validateUserId(auditUserIdStr);
 
@@ -220,7 +226,6 @@ public class Authorization{
 
         if(carrier.isPresent() && user.isPresent()) {
             // check if the token provided is valid and belongs to the same requesting user.
-            String token = getJwtFromRequest();
             boolean isValidToken = jwtTokenProvider.validateToken(token, user.get().getLoginName(), user.get().getApiKey());
             if(!isValidToken){
                 throw new PermissionException("Invalid Bearer token provided");

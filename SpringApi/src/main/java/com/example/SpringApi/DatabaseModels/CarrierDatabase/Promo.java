@@ -18,7 +18,7 @@ public class Promo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PromoId", nullable = false)
-    private long promoId;
+    private Long promoId;
 
     @Column(name = "Description", nullable = false)
     private String description;

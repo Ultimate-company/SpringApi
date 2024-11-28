@@ -28,9 +28,6 @@ public class Message {
     @Column(name = "Description")
     private String description;
 
-    @Column(name = "DescriptionMarkDown")
-    private String descriptionMarkDown;
-
     @Column(name = "DescriptionHtml", nullable = false)
     private String descriptionHtml;
 
@@ -44,7 +41,7 @@ public class Message {
     private String sendgridEmailBatchId;
 
     @Column(name = "CreatedByUserId")
-    private long createdByUserId;
+    private Long createdByUserId;
 
     @Column(name = "IsUpdated", nullable = false)
     private boolean updated;

@@ -37,6 +37,7 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class UserDataAccessor extends BaseDataAccessor implements IUserSubTranslator {
@@ -124,7 +125,7 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
         /*
         *  if list of group ids is not empty then check all the group ids are valid
         * */
-        if(userGroupRepository.findAllById(groupIds).size() != groupIds.size()) {
+        if(groupIds != null && userGroupRepository.findAllById(groupIds).size() != groupIds.size()) {
             return Pair.of(ErrorMessages.UserGroupErrorMessages.ER001, false);
         }
 
@@ -207,8 +208,8 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     public Response<Long> createUser(UsersRequestModel usersRequestModel) throws Exception {
         // check if the user is already in the system or no
         Response<Boolean> isEmailAvailableInSystemResponse = isEmailAvailableInSystem(usersRequestModel.getUser().getLoginName());
-        if(isEmailAvailableInSystemResponse.isSuccess()){
-            if(!isEmailAvailableInSystemResponse.getItem()){
+        if(isEmailAvailableInSystemResponse.isSuccess()) {
+            if(!isEmailAvailableInSystemResponse.getItem()) {
                 return new Response<>(false, ErrorMessages.UserErrorMessages.EmailExists, null);
             }
         }
@@ -252,14 +253,17 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
         addressRepository.save(HelperUtils.copyFields(usersRequestModel.getAddress(), com.example.SpringApi.DatabaseModels.CarrierDatabase.Address.class));
 
         // save user group mappings
-        List<UserGroupsUsersMap> userGroupsUsersMaps = new ArrayList<>();
-        for(UserGroup group : userGroupRepository.findAllById(usersRequestModel.getUserGroupIds())){
-            UserGroupsUsersMap userGroupsUsersMap = new UserGroupsUsersMap();
-            userGroupsUsersMap.setUserId(savedUser.getUserId());
-            userGroupsUsersMap.setUserGroupId(group.getUserGroupId());
-            userGroupsUsersMaps.add(userGroupsUsersMap);
+        if(usersRequestModel.getUserGroupIds() != null &&
+            !usersRequestModel.getUserGroupIds().isEmpty()) {
+            List<UserGroupsUsersMap> userGroupsUsersMaps = new ArrayList<>();
+            for(UserGroup group : userGroupRepository.findAllById(usersRequestModel.getUserGroupIds())){
+                UserGroupsUsersMap userGroupsUsersMap = new UserGroupsUsersMap();
+                userGroupsUsersMap.setUserId(savedUser.getUserId());
+                userGroupsUsersMap.setUserGroupId(group.getUserGroupId());
+                userGroupsUsersMaps.add(userGroupsUsersMap);
+            }
+            userGroupsUsersMapRepository.saveAll(userGroupsUsersMaps);
         }
-        userGroupsUsersMapRepository.saveAll(userGroupsUsersMaps);
 
         //save permissions and add the user mappings
         Permissions savedPermission = permissionRepository.save(HelperUtils.copyFields(usersRequestModel.getPermissions(), com.example.SpringApi.DatabaseModels.CarrierDatabase.Permissions.class));
@@ -276,8 +280,9 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
         }
 
         //upload the profile picture if present
-        if(!usersRequestModel.getProfilePictureBase64().isEmpty()
-        && !usersRequestModel.getProfilePictureBase64().isBlank()) {
+        if(usersRequestModel.getProfilePictureBase64() != null &&
+                !usersRequestModel.getProfilePictureBase64().isEmpty() &&
+                !usersRequestModel.getProfilePictureBase64().isBlank()) {
             String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default")
                     + "/"
                     + getCarrierDetails().getDatabaseName()
@@ -294,11 +299,14 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
 
         // send account confirmation email
         com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier carrier = getCarrierDetails();
-        this.emailTemplates = new EmailTemplates(carrier.getSendgridSenderName(), carrier.getSendgridEmailAddress(), carrier.getSendgridApikey());
-        Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendNewUserAccountConfirmation(
+        this.emailTemplates = new EmailTemplates(
+                carrier.getSendgridSenderName(),
+                carrier.getSendgridEmailAddress(),
+                carrier.getSendgridApikey(),
                 environment,
                 HelperUtils.copyFields(carrier, Carrier.class),
-                HelperUtils.copyFields(googleCred.get(), GoogleCred.class),
+                HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
+        Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendNewUserAccountConfirmation(
                 savedUser.getUserId(),
                 savedUser.getToken(),
                 savedUser.getLoginName(),
@@ -441,84 +449,6 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     public Response<Boolean> isEmailAvailableInSystem(String email) {
         User user = userRepository.findByLoginName(email);
         return new Response<>(true, SuccessMessages.Success, user == null);
-    }
-
-    @Override
-    public Response<String> importUsers(ImportUsersRequestModel importUsersRequestModel) throws Exception {
-
-        String[][] usersDatatable = ExcelHelper.deSerializeStringTo2DWorkbook(importUsersRequestModel.getUsersDataTable());
-        if (usersDatatable.length < 2) {
-            return new Response<>(false, ErrorMessages.UserErrorMessages.ER001, null);
-        }
-        if (usersDatatable.length > 100) {
-            return new Response<>(false, ErrorMessages.UserErrorMessages.ER002, null);
-        }
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        Map<User, String> userPasswordMapping = new HashMap<>();
-        for (String[] row : usersDatatable) {
-            User newUser = new User();
-            Address newAddress = new Address();
-            String password = PasswordHelper.getRandomPassword();
-            String[] saltAndHash = PasswordHelper.getHashedPasswordAndSalt(password);
-
-            User user = userRepository.findByLoginName(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.Email)]);
-            if(user != null){
-                throw new Exception(ErrorMessages.LoginErrorMessages.ER010);
-            }
-
-            // set the user fields
-            newUser.setFirstName(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.FirstName)]);
-            newUser.setLastName(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.LastName)]);
-            newUser.setLoginName(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.Email)]);
-            newUser.setRole(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.Role)]);
-            newUser.setDob(dateFormat.parse(dateFormat.format(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.DOB)])));
-            newUser.setPhone(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.Phone)]);
-            newUser.setSalt(saltAndHash[0]);
-            newUser.setPassword(saltAndHash[1]);
-            newUser.setApiKey(PasswordHelper.getToken(newUser.getLoginName()));
-            newUser.setToken(PasswordHelper.getToken(newUser.getLoginName()));
-            newUser.setLockedAttempts(5);
-            newUser.setAuditUserId(getUserId());
-            User savedUser = userRepository.save(newUser);
-
-            // set the address fields
-            newAddress.setLine1(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.AddressLine1)]);
-            newAddress.setLine2(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.AddressLine2)]);
-            newAddress.setCity(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.City)]);
-            newAddress.setState(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.State)]);
-            newAddress.setZipCode(row[ImportUsersRequestModel.headers.indexOf(ImportUsersRequestModel.Header.ZipCode)]);
-            newAddress.setAuditUserId(getUserId());
-            newAddress.setUserId(savedUser.getUserId());
-
-            addressRepository.save(newAddress);
-            userPasswordMapping.put(savedUser, password);
-        }
-
-        // fetch google creds for carrier
-        Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
-        if (googleCred.isEmpty()) {
-            throw new Exception(ErrorMessages.CarrierErrorMessages.ER007);
-        }
-
-        com.example.SpringApi.DatabaseModels.CentralDatabase.Carrier carrier = getCarrierDetails();
-        this.emailTemplates = new EmailTemplates(carrier.getSendgridSenderName(), carrier.getSendgridEmailAddress(), carrier.getSendgridApikey());
-        for(Map.Entry<User, String> mapping : userPasswordMapping.entrySet()){
-            // send account confirmation email
-            Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendNewUserAccountConfirmation(
-                    environment,
-                    HelperUtils.copyFields(carrier, Carrier.class),
-                    HelperUtils.copyFields(googleCred.get(), GoogleCred.class),
-                    mapping.getKey().getUserId(),
-                    mapping.getKey().getToken(),
-                    mapping.getKey().getLoginName(),
-                    mapping.getValue());
-            if(!sendAccountConfirmationEmailResponse.isSuccess()) {
-                throw new Exception(sendAccountConfirmationEmailResponse.getMessage());
-            }
-        }
-
-        return new Response<>(true, "Successfully created users", "Success");
     }
 
     @Override

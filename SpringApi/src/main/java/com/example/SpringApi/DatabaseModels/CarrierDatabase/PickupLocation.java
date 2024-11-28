@@ -18,7 +18,7 @@ public class PickupLocation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PickupLocationId", nullable = false)
-    private long pickupLocationId;
+    private Long pickupLocationId;
 
     @Column(name = "AddressNickName", nullable = false)
     private String addressNickName;

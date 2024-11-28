@@ -109,6 +109,11 @@ public class GridDataAccessor extends BaseDataAccessor implements IGridSubTransl
         UserGridPreference userGridPreference = userGridPreferenceRepository
                 .findUserGridPreferenceByUserIdAndGridId(getUserId(), gridId);
 
+        if(userGridPreference == null) {
+            return new Response<>(true,
+                    SuccessMessages.UserGridPreferenceSuccessMessages.GetUserGridPreference,
+                    null);
+        }
         return new Response<>(true,
                 SuccessMessages.UserGridPreferenceSuccessMessages.GetUserGridPreference,
                 HelperUtils.copyFields(userGridPreference, org.example.Models.CommunicationModels.CarrierModels.UserGridPreference.class));
