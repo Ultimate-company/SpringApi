@@ -1,14 +1,15 @@
 package com.example.SpringApi.Services.CarrierDatabase;
 
 import com.example.SpringApi.DatabaseModels.CarrierDatabase.*;
+import com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred;
 import com.example.SpringApi.ErrorMessages;
 import com.example.SpringApi.Repository.CarrierDatabase.*;
 import com.example.SpringApi.Repository.CentralDatabase.CarrierRepository;
+import com.example.SpringApi.Repository.CentralDatabase.GoogleCredRepository;
 import com.example.SpringApi.Repository.CentralDatabase.UserRepository;
 import com.example.SpringApi.Services.BaseDataAccessor;
 import com.example.SpringApi.Services.CentralDatabase.UserLogDataAccessor;
 import com.example.SpringApi.SuccessMessages;
-import com.itextpdf.text.DocumentException;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -25,6 +26,7 @@ import com.example.SpringApi.DatabaseModels.CentralDatabase.User;
 import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CarrierDatabaseTranslators.Interfaces.IPurchaseOrderSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -34,10 +36,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.time.LocalDateTime;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -51,6 +53,8 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final UserLogDataAccessor userLogDataAccessor;
+    private final GoogleCredRepository googleCredRepository;
+    private final Environment environment;
 
     @Autowired
     public PurchaseOrderDataAccessor(HttpServletRequest request, CarrierRepository carrierRepository,
@@ -60,7 +64,9 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
                                      LeadRepository leadRepository,
                                      UserRepository userRepository,
                                      ProductRepository productRepository,
-                                     UserLogDataAccessor userLogDataAccessor) {
+                                     UserLogDataAccessor userLogDataAccessor,
+                                     GoogleCredRepository googleCredRepository,
+                                     Environment environment) {
         super(request, carrierRepository);
         this.purchaseOrdersProductQuantityMapRepository = purchaseOrdersProductQuantityMapRepository;
         this.purchaseOrderRepository = purchaseOrderRepository;
@@ -69,6 +75,31 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.userLogDataAccessor = userLogDataAccessor;
+        this.googleCredRepository = googleCredRepository;
+        this.environment = environment;
+    }
+
+    private Map<Product, Integer> getProductQuantityMap(Long purchaseOrderId) {
+        List<PurchaseOrdersProductQuantityMap> purchaseOrdersProductQuantityMaps =
+                purchaseOrdersProductQuantityMapRepository.findByPurchaseOrderId(purchaseOrderId);
+
+        Map<Product, Integer> productQuantityMap = new HashMap<>();
+
+        // Iterate through the list and fill the map
+        for (PurchaseOrdersProductQuantityMap purchaseOrderProduct : purchaseOrdersProductQuantityMaps) {
+            Long productId = purchaseOrderProduct.getProductId();
+            int quantity = purchaseOrderProduct.getQuantity();
+
+            // Fetch product using productId
+            Optional<Product> productOpt = productRepository.findById(productId);
+
+            if (productOpt.isPresent()) {
+                Product product = productOpt.get();
+                productQuantityMap.put(product, quantity);
+            }
+        }
+
+        return productQuantityMap;
     }
 
     private String formPurchaseOrderPdf(
@@ -77,13 +108,12 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
             Address shippingAddress,
             User purchaseOrderCreatedBy,
             User purchaseOrderApprovedBy,
-            Lead lead,
-            List<PurchaseOrdersProductQuantityMap> purchaseOrdersProductQuantityMaps) throws IOException, TemplateException {
+            Lead lead) throws IOException, TemplateException {
 
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_32);
-        cfg.setDirectoryForTemplateLoading(new File("/Users/nraichura/Desktop/Ultimate Company/spring-api/SpringApi/src/main/resources/templates/Invoices"));
+        Path path = Paths.get("SpringApi", "src", "main", "resources", "InvoiceTemplates").toAbsolutePath();
+        cfg.setDirectoryForTemplateLoading(path.toFile());
         Template template = cfg.getTemplate("PurchaseOrder.ftl");
-
         Map<String, Object> templateData = new HashMap<>();
 
         // fill in the markers
@@ -95,7 +125,7 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
         templateData.put("lead", lead);
         templateData.put("purchaseOrderCreatedBy", purchaseOrderCreatedBy);
         templateData.put("purchaseOrderApprovedBy", purchaseOrderApprovedBy);
-        templateData.put("purchaseOrdersProductQuantityMaps",  purchaseOrdersProductQuantityMaps);
+        templateData.put("purchaseOrdersProductQuantityMaps",  getProductQuantityMap(purchaseOrder.getPurchaseOrderId()));
 
         StringWriter out = new StringWriter();
         template.process(templateData, out);
@@ -132,7 +162,7 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
 
         // optional fields
         if(purchaseOrder.getExpectedShipmentDate() != null
-                && !DateHelper.isDateLessThanCurrentUTC(DateHelper.convertLocalDateTimeToDate(purchaseOrder.getExpectedShipmentDate()))) {
+                && DateHelper.isDateLessThanCurrentUTC(DateHelper.convertLocalDateTimeToDate(purchaseOrder.getExpectedShipmentDate()))) {
             return Pair.of(ErrorMessages.PurchaseOrderErrorMessages.ER001, false);
         }
 
@@ -412,7 +442,7 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
     }
 
     @Override
-    public Response<String> getPurchaseOrderPDF(long purchaseOrderId) throws TemplateException, IOException, DocumentException {
+    public Response<String> getPurchaseOrderPDF(long purchaseOrderId) throws TemplateException, IOException {
         Optional<PurchaseOrder> purchaseOrder = purchaseOrderRepository.findById(purchaseOrderId);
         if(purchaseOrder.isEmpty()){
             return new Response<>(false, ErrorMessages.PurchaseOrderErrorMessages.InvalidId, null);
@@ -435,10 +465,13 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
 
         Optional<Lead> lead = leadRepository.findById(purchaseOrder.get().getAssignedLeadId());
         if(lead.isEmpty()){
-            return new Response<>(false, ErrorMessages.PaymentInfoErrorMessages.InvalidId, null);
+            return new Response<>(false, ErrorMessages.LeadsErrorMessages.InvalidId, null);
         }
 
-        List<PurchaseOrdersProductQuantityMap> purchaseOrdersProductQuantityMaps = purchaseOrdersProductQuantityMapRepository.findByPurchaseOrderId(purchaseOrder.get().getPurchaseOrderId());
+        Optional<GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
+        if(googleCred.isEmpty()){
+            return new Response<>(false, ErrorMessages.CarrierErrorMessages.InvalidId, null);
+        }
 
         String htmlContent = formPurchaseOrderPdf(
                 getCarrierDetails(),
@@ -446,14 +479,18 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
                 shippingAddress.get(),
                 purchaseOrderCreatedBy.get(),
                 purchaseOrderApprovedBy.get(),
-                lead.get(),
-                purchaseOrdersProductQuantityMaps);
+                lead.get());
 
         htmlContent = HTMLHelper.replaceBrTags(htmlContent);
-        byte[] pdfBytes = PDFHelper.convertHtmlToPdf(htmlContent);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("filename", "PurchaseOrder.pdf");
+        String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default") + "/"
+                + getCarrierDetails().getDatabaseName()
+                + "/Logo.png";
+
+        byte[] pdfBytes = PDFHelper.convertPurchaseOrderHtmlToPdf(
+                HelperUtils.copyFields(googleCred.get(), org.example.Models.CommunicationModels.CentralModels.GoogleCred.class),
+                filePath,
+                htmlContent);
+
         return new Response<>(true, SuccessMessages.PurchaseOrderSuccessMessages.GetPurchaseOrderPdf, Base64.getEncoder().encodeToString(pdfBytes));
     }
 }

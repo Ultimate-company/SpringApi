@@ -18,7 +18,7 @@ public class WebTemplate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "WebTemplateId", nullable = false)
-    private long webTemplateId;
+    private Long webTemplateId;
 
     @Column(name = "SortOptions", nullable = false)
     private String sortOptions;

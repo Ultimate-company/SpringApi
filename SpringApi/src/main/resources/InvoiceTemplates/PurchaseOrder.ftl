@@ -9,7 +9,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            background-color: white !important;
         }
         .container {
             max-width: 800px;
@@ -24,16 +24,16 @@
             margin-bottom: 20px;
         }
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            overflow: hidden; /* Clear floats */
             margin-bottom: 20px;
         }
-        .company-logo {
-            width: 100px;
-            height: auto;
+        .profile_picture {
+            float: left;
+            width: 220px;
+            height: 140px;
         }
         .company-info {
+            float: right;
             text-align: right;
         }
         .company-info h2 {
@@ -75,9 +75,7 @@
 
     <!-- Header -->
     <div class="header">
-        <div class="company-logo">
-            <img src="${companyLogo}" alt="Company Logo" height="100" width="100"/>
-        </div>
+        <div class="profile_picture"></div>
         <div class="company-info">
             <h2>${companyName}</h2>
             <p>${website}</p>
@@ -99,7 +97,9 @@
             <div class="terms">
                 ${purchaseOrder.termsConditionsHtml}
             </div>
-            <p><strong>Order Receipt:</strong> ${purchaseOrder.orderReceipt}</p>
+            <#if purchaseOrder.orderReceipt?has_content>
+                <p><strong>Order Receipt:</strong> ${purchaseOrder.orderReceipt}</p>
+            </#if>
             <p><strong>Approved:</strong> ${purchaseOrder.approved?string('Yes', 'No')}</p>
         </div>
     </div>
@@ -123,7 +123,9 @@
             <p><strong>Email:</strong> ${lead.email}</p>
             <p><strong>Phone:</strong> ${lead.phone}</p>
             <p><strong>Title:</strong> ${lead.title}</p>
-            <p><strong>Website:</strong> <a href="${lead.website}">${lead.website}</a></p>
+            <#if lead.website?exists && lead.website?has_content>
+                <p><strong>Website:</strong> <a href="${lead.website}">${lead.website}</a></p>
+            </#if>
         </div>
     </div>
 
@@ -156,15 +158,20 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th>Product</th>
+                    <th>ProductId</th>
+                    <th>Product Name</th>
                     <th>Quantity</th>
                 </tr>
                 </thead>
                 <tbody>
-                <#list purchaseOrdersProductQuantityMaps as map>
+                <#list purchaseOrdersProductQuantityMaps as product, quantity>
                     <tr>
-                        <td>${map.productId}</td>
-                        <td>${map.quantity}</td>
+                        <!-- Access the productId from the Product object -->
+                        <td>${product.productId}</td>
+                        <!-- Access the product title from the Product object -->
+                        <td>${product.title}</td>
+                        <!-- Access the quantity -->
+                        <td>${quantity}</td>
                     </tr>
                 </#list>
                 </tbody>

@@ -33,17 +33,11 @@ public class PurchaseOrder {
     @Column(name = "TermsConditionsHtml", nullable = false)
     private String termsConditionsHtml;
 
-    @Column(name = "TermsConditionsMarkdown")
-    private String termsConditionsMarkdown;
-
     @Column(name = "OrderReceipt")
     private String orderReceipt;
 
     @Column(name = "Approved", nullable = false)
     private boolean approved;
-
-    @Column(name = "SalesOrderId")
-    private Long salesOrderId;
 
     // Fk's
     @Column(name = "ApprovedByUserId")

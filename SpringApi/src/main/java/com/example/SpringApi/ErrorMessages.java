@@ -212,6 +212,7 @@ public class ErrorMessages {
         public static final String ER005 = "Assigned Agent user id should be present in the database.";
         public static final String ER006 = "Website should be correctly formatted.";
         public static final String ER007 = "Invalid lead status, the lead status should be one of the following: ";
+        public static final String ER008 = "Lead title is required.";
     }
 
     public static class SalesOrderErrorMessages {

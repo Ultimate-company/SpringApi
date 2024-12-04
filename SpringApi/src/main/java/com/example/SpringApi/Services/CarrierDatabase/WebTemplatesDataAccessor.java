@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -78,10 +79,10 @@ public class WebTemplatesDataAccessor extends BaseDataAccessor implements IWebTe
         }
 
         // 2. At least one product id should be present and should be valid
-        List<Long> productIds = productRepository.findAll().stream().map(Product:: getProductId).toList();
+        List<Product> products = productRepository.findAllById(webTemplateRequestModel.getSelectedProductIds());
         if(webTemplateRequestModel.getSelectedProductIds() == null ||
                 webTemplateRequestModel.getSelectedProductIds().isEmpty() ||
-                !new HashSet<>(productIds).containsAll(webTemplateRequestModel.getSelectedProductIds())){
+                webTemplateRequestModel.getSelectedProductIds().size() != products.size()){
             return Pair.of(ErrorMessages.WebTemplatesErrorMessages.ER002, false);
         }
 
@@ -169,14 +170,13 @@ public class WebTemplatesDataAccessor extends BaseDataAccessor implements IWebTe
             }
         }
 
-        Pageable pageable = PageRequest.of(paginationBaseRequestModel.getStart(),
-                paginationBaseRequestModel.getEnd() - paginationBaseRequestModel.getStart());
-
         Page<Object[]> webTemplates = webTemplatesRepository.findPaginatedWebTemplates(paginationBaseRequestModel.getColumnName(),
                 paginationBaseRequestModel.getCondition(),
                 paginationBaseRequestModel.getFilterExpr(),
                 paginationBaseRequestModel.isIncludeDeleted(),
-                pageable);
+                PageRequest.of(paginationBaseRequestModel.getStart() / (paginationBaseRequestModel.getEnd() - paginationBaseRequestModel.getStart()),
+                        paginationBaseRequestModel.getEnd() - paginationBaseRequestModel.getStart(),
+                        Sort.by("webTemplateId").descending()));
 
         List<WebTemplateResponseModel> webTemplateResponseModels = new ArrayList<>();
         for (Object[] result : webTemplates.getContent()) {
