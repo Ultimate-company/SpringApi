@@ -68,7 +68,6 @@ public class MessageControllerTest {
         message.setTitle("Test message");
         message.setPublishDate(new Date());
         message.setDescription("Test Description");
-        message.setDescriptionMarkDown("Test Description");
         message.setDescriptionHtml("Test Description Html");
         message.setSendAsEmail(false);
 
@@ -98,7 +97,6 @@ public class MessageControllerTest {
         message.setTitle("Test message edit");
         message.setPublishDate(new Date());
         message.setDescription("Test Description edit");
-        message.setDescriptionMarkDown("Test Description");
         message.setDescriptionHtml("Test Description Html");
         message.setSendAsEmail(false);
 
