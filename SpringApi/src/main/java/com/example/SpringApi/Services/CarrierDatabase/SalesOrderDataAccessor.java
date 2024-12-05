@@ -9,7 +9,6 @@ import com.example.SpringApi.Repository.CentralDatabase.UserRepository;
 import com.example.SpringApi.Services.BaseDataAccessor;
 import com.example.SpringApi.Services.CentralDatabase.UserLogDataAccessor;
 import com.example.SpringApi.SuccessMessages;
-import com.itextpdf.text.DocumentException;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -588,15 +587,6 @@ public class SalesOrderDataAccessor extends BaseDataAccessor implements ISalesOr
                 packagesToUpdate.forEach(entityManager::merge);
             }
 
-            // update the purchase order set the purchase order id
-            {
-                Optional<PurchaseOrder> purchaseOrder = purchaseOrderRepository.findById(salesOrderRequestModel.getSalesOrder().getPurchaseOrderId());
-                purchaseOrder.ifPresent(existingPO -> {
-                    existingPO.setSalesOrderId(savedSalesOrder.getSalesOrderId());
-                    entityManager.merge(existingPO);
-                });
-            }
-
             /* ************ SHIPROCKET STUFF ************** */
             // STEP 1 ======  get the shiprocket token
             Response<String> shipRocketTokenResponse = shippingHelper.getToken();
@@ -893,7 +883,7 @@ public class SalesOrderDataAccessor extends BaseDataAccessor implements ISalesOr
     }
 
     @Override
-    public Response<byte[]> getSalesOrderPDF(long salesOrderId) throws TemplateException, IOException, DocumentException {
+    public Response<String> getSalesOrderPDF(long salesOrderId) throws TemplateException, IOException {
         Optional<SalesOrder> salesOrder = salesOrderRepository.findById(salesOrderId);
         if(salesOrder.isEmpty()){
             return new Response<>(false, ErrorMessages.SalesOrderErrorMessages.InvalidId, null);
@@ -948,10 +938,6 @@ public class SalesOrderDataAccessor extends BaseDataAccessor implements ISalesOr
                 lead.get(),
                 salesOrdersProductQuantityMaps);
 
-        byte[] pdfBytes = PDFHelper.convertHtmlToPdf(htmlContent);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("filename", "SalesOrder.pdf");
-        return new Response<>(true, SuccessMessages.SalesOrderSuccessMessages.GetSalesOrderPdf, pdfBytes);
+        return new Response<>(true, SuccessMessages.SalesOrderSuccessMessages.GetSalesOrderPdf, htmlContent);
     }
 }

@@ -2,7 +2,6 @@ package com.example.SpringApi.Controller.Tests.CarrierDatabase;
 
 import com.example.SpringApi.Controllers.CarrierDatabase.PurchaseOrderController;
 import com.example.SpringApi.Services.CarrierDatabase.PurchaseOrderDataAccessor;
-import com.itextpdf.text.DocumentException;
 import freemarker.template.TemplateException;
 import org.example.Models.RequestModels.ApiRequestModels.PurchaseOrderRequestModel;
 import org.example.Models.RequestModels.GridRequestModels.PaginationBaseRequestModel;
@@ -72,7 +71,6 @@ public class PurchaseOrderControllerTest {
         purchaseOrder.setExpectedShipmentDate(LocalDateTime.parse("2025-04-01T08:00:00"));
         purchaseOrder.setVendorNumber("VENDOR123");
         purchaseOrder.setTermsConditionsHtml("<p>Terms and conditions HTML content</p>");
-        purchaseOrder.setTermsConditionsMarkdown("Terms and conditions Markdown content");
         purchaseOrder.setOrderReceipt("Order receipt content 3");
         purchaseOrder.setAssignedLeadId(7L);
 
@@ -117,7 +115,6 @@ public class PurchaseOrderControllerTest {
         purchaseOrder.setExpectedShipmentDate(LocalDateTime.parse("2025-04-01T08:00:00"));
         purchaseOrder.setVendorNumber("VENDOR123");
         purchaseOrder.setTermsConditionsHtml("<p>Terms and conditions HTML content</p>");
-        purchaseOrder.setTermsConditionsMarkdown("Terms and conditions Markdown content");
         purchaseOrder.setOrderReceipt("Order receipt content 3");
         purchaseOrder.setAssignedLeadId(7L);
 
@@ -209,7 +206,7 @@ public class PurchaseOrderControllerTest {
     }
 
     @Test
-    public void testGetSalesOrderPDF() throws TemplateException, DocumentException, IOException {
+    public void testGetSalesOrderPDF() throws TemplateException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 

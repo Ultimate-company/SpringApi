@@ -64,7 +64,7 @@ public class LoginDataAccessor implements ILoginSubTranslator {
             ex.printStackTrace();
         }
         finally{
-            this.emailTemplates = new EmailTemplates(sendGridSenderName, sendGridFromAddress ,sendGridApiKey);
+            this.emailTemplates = new EmailTemplates(sendGridSenderName, sendGridFromAddress ,sendGridApiKey, null, null, null);
         }
     }
 
@@ -191,10 +191,10 @@ public class LoginDataAccessor implements ILoginSubTranslator {
         newUser.setLockedAttempts(5);
 
         User savedUser = userRepository.save(HelperUtils.copyFields(newUser, User.class));
-        Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendAccountConfirmationEmail(savedUser.getUserId(), newUser.getToken(), newUser.getLoginName());
-        if(!sendAccountConfirmationEmailResponse.isSuccess()) {
-            throw new Exception(sendAccountConfirmationEmailResponse.getMessage());
-        }
+//        Response<Boolean> sendAccountConfirmationEmailResponse = emailTemplates.sendAccountConfirmationEmail(savedUser.getUserId(), newUser.getToken(), newUser.getLoginName());
+//        if(!sendAccountConfirmationEmailResponse.isSuccess()) {
+//            throw new Exception(sendAccountConfirmationEmailResponse.getMessage());
+//        }
 
         userLogDataAccessor.logData(savedUser.getUserId(), SuccessMessages.LoginSuccessMessages.SuccessSignedUp, ApiRoutes.LoginSubRoute.SIGN_UP);
         return new Response<>(true, SuccessMessages.LoginSuccessMessages.SuccessSignedUp, newUser.getApiKey());

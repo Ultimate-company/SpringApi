@@ -44,6 +44,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User findByLoginName(String loginName);
 
+    @Query("SELECT u FROM User u WHERE u.loginName IN :loginNames")
+    List<User> findByLoginNames(@Param("loginNames") List<String> loginNames);
+
     @Query(value = "SELECT u from User u where (:includeDeleted = true or u.deleted = true)")
     List<User> findAllWithIncludeDeleted(@Param("includeDeleted") boolean includeDeleted);
 

@@ -136,6 +136,11 @@ public class MessageDataAccessor extends BaseDataAccessor implements IMessageSub
     public Response<Long> createMessage(MessageRequestModel messageRequestModel) {
         Message message = HelperUtils.copyFields(messageRequestModel.getMessage(), Message.class);
 
+        // clean the data
+        if(messageRequestModel.getMessage().getCreatedByUserId() == null) {
+            messageRequestModel.getMessage().setCreatedByUserId(getUserId());
+        }
+
         // validate the message request model
         Pair<String, Boolean> validation = validateMessage(message, messageRequestModel.getUserIds());
         if(!validation.getValue()){
@@ -184,7 +189,8 @@ public class MessageDataAccessor extends BaseDataAccessor implements IMessageSub
                 SuccessMessages.MessagesSuccessMessages.InsertMessage + " " + savedMessage.getMessageId(),
                 ApiRoutes.MessagesSubRoute.CREATE_MESSAGE);
 
-        return new Response<>(true, SuccessMessages.MessagesSuccessMessages.InsertMessage, savedMessage.getMessageId());
+        long savedMessageMessageId = savedMessage.getMessageId();
+        return new Response<>(true, SuccessMessages.MessagesSuccessMessages.InsertMessage, savedMessageMessageId);
     }
 
     @Override
@@ -241,7 +247,6 @@ public class MessageDataAccessor extends BaseDataAccessor implements IMessageSub
         existingMessage.get().setTitle(message.getTitle());
         existingMessage.get().setDescriptionHtml(message.getDescriptionHtml());
         existingMessage.get().setDescription(message.getDescription());
-        existingMessage.get().setDescriptionMarkDown(message.getDescriptionMarkDown());
         existingMessage.get().setPublishDate(message.getPublishDate());
         existingMessage.get().setSendAsEmail(message.isSendAsEmail());
         existingMessage.get().setUpdated(true);

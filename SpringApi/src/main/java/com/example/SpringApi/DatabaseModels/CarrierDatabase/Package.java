@@ -16,7 +16,7 @@ public class Package {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "PackageId", nullable = false)
-    private long packageId;
+    private Long packageId;
 
     @Column(name = "LInches", nullable = false)
     private int length;

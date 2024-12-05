@@ -66,6 +66,14 @@ public class PickupLocationDataAccessor extends BaseDataAccessor implements IPic
             return Pair.of(ErrorMessages.InvalidAddress, false);
         }
 
+        // email and phone on address is required.
+        if(!Validations.isValidEmail(address.getEmailAtAddress())){
+            return Pair.of(ErrorMessages.PickupLocationErrorMessages.ER002, false);
+        }
+        if(!Validations.isValidPhone(address.getPhoneOnAddress())){
+            return Pair.of(ErrorMessages.PickupLocationErrorMessages.ER003, false);
+        }
+
         return Pair.of("Success", true);
     }
 

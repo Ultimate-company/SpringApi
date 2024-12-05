@@ -2,8 +2,6 @@ package com.example.SpringApi.Controller.Tests.CarrierDatabase;
 
 import com.example.SpringApi.Controllers.CarrierDatabase.LeadController;
 import com.example.SpringApi.Services.CarrierDatabase.LeadDataAccessor;
-import com.example.SpringApi.DatabaseModels.CarrierDatabase.Address;
-import com.example.SpringApi.DatabaseModels.CarrierDatabase.Lead;
 import org.example.Models.RequestModels.ApiRequestModels.LeadRequestModel;
 import org.example.Models.RequestModels.GridRequestModels.PaginationBaseRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.LeadResponseModel;
@@ -122,7 +120,7 @@ public class LeadControllerTest {
         address.setPhoneOnAddress("1234567890");
 
         org.example.Models.CommunicationModels.CarrierModels.Lead lead = new org.example.Models.CommunicationModels.CarrierModels.Lead();
-        lead.setLeadId(1);
+        lead.setLeadId(1L);
         lead.setAnnualRevenue("1000000");
         lead.setCompany("Test Company");
         lead.setCompanySize(500);

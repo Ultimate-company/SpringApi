@@ -66,6 +66,9 @@ public class LeadDataAccessor extends BaseDataAccessor implements ILeadSubTransl
         if (lead.getPhone() == null || !StringUtils.hasText(lead.getPhone()) || !Validations.isValidPhone(lead.getPhone())) {
             return Pair.of(ErrorMessages.LeadsErrorMessages.ER004, false);
         }
+        if (lead.getTitle() == null || !StringUtils.hasText(lead.getTitle())) {
+            return Pair.of(ErrorMessages.LeadsErrorMessages.ER008, false);
+        }
 
         if(lead.getLeadStatus() == null
                 ||  !StringUtils.hasText(lead.getLeadStatus())

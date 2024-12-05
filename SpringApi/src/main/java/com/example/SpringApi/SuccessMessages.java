@@ -168,6 +168,6 @@ public class SuccessMessages {
     public static class UserGridPreferenceSuccessMessages {
         // standard success messages
         public static final String UpdateUserGridPreference = "Successfully updated user grid preferences.";
-        public static final String GetUserGridPreference = "Successfully got user grid preferences.";
+        public static final String GetUserGridPreference = "Successfully got grid preferences.";
     }
 }

@@ -1,6 +1,6 @@
 package com.example.SpringApi.Controller.Tests.CarrierDatabase;
 
-import com.example.SpringApi.Controllers.CarrierDatabase.UserController;
+import com.example.SpringApi.Controllers.CentralDatabase.UserController;
 import com.example.SpringApi.Services.CentralDatabase.UserDataAccessor;
 import org.example.Models.CommunicationModels.CarrierModels.Permissions;
 import org.example.Models.CommunicationModels.CentralModels.User;

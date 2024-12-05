@@ -6,16 +6,26 @@ import com.example.SpringApi.DatabaseModels.CarrierDatabase.WebTemplate;
 import com.example.SpringApi.ErrorMessages;
 import com.example.SpringApi.Repository.CarrierDatabase.*;
 import com.example.SpringApi.Repository.CentralDatabase.CarrierRepository;
+import com.example.SpringApi.Repository.CentralDatabase.GoogleCredRepository;
 import com.example.SpringApi.Repository.CentralDatabase.ProductCategoryRepository;
 import com.example.SpringApi.Services.BaseDataAccessor;
 import com.example.SpringApi.Services.CentralDatabase.UserLogDataAccessor;
 import com.example.SpringApi.SuccessMessages;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.shaded.gson.Gson;
+import com.nimbusds.jose.shaded.gson.GsonBuilder;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.tuple.Pair;
+import org.example.Adapters.DateAdapter;
+import org.example.Adapters.LocalDateTimeAdapter;
 import org.example.ApiRoutes;
+import org.example.CommonHelpers.FirebaseHelper;
 import org.example.CommonHelpers.HelperUtils;
 import com.example.SpringApi.DatabaseModels.CarrierDatabase.Product;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.ProductCategory;
+import org.example.CommonHelpers.JsonResponse;
+import org.example.CommonHelpers.Validations;
+import org.example.Models.CommunicationModels.CentralModels.GoogleCred;
 import org.example.Models.RequestModels.GridRequestModels.PaginationBaseRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.PaginationBaseResponseModel;
 import org.example.Models.ResponseModels.ApiResponseModels.PickupLocationResponseModel;
@@ -23,15 +33,21 @@ import org.example.Models.ResponseModels.ApiResponseModels.ProductsResponseModel
 import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CarrierDatabaseTranslators.Interfaces.IProductSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,7 +60,9 @@ public class ProductDataAccessor extends BaseDataAccessor implements IProductSub
     private final WebTemplatesRepository webTemplatesRepository;
     private final WebTemplateUserCartMappingRepository webTemplateUserCartMappingRepository;
     private final WebTemplateUserLikedItemsMappingRepository webTemplateUserLikedItemsMappingRepository;
+    private final GoogleCredRepository googleCredRepository;
     private final UserLogDataAccessor userLogDataAccessor;
+    private Environment environment;
 
     @Autowired
     public ProductDataAccessor(HttpServletRequest request,
@@ -57,7 +75,9 @@ public class ProductDataAccessor extends BaseDataAccessor implements IProductSub
                                WebTemplatesRepository webTemplatesRepository,
                                WebTemplateUserCartMappingRepository webTemplateUserCartMappingRepository,
                                WebTemplateUserLikedItemsMappingRepository webTemplateUserLikedItemsMappingRepository,
-                               UserLogDataAccessor userLogDataAccessor) {
+                               GoogleCredRepository googleCredRepository,
+                               UserLogDataAccessor userLogDataAccessor,
+                               Environment environment) {
         super(request, carrierRepository);
         this.productCategoryRepository = productCategoryRepository;
         this.pickupLocationRepository = pickupLocationRepository;
@@ -67,7 +87,9 @@ public class ProductDataAccessor extends BaseDataAccessor implements IProductSub
         this.webTemplatesRepository = webTemplatesRepository;
         this.webTemplateUserCartMappingRepository = webTemplateUserCartMappingRepository;
         this.webTemplateUserLikedItemsMappingRepository = webTemplateUserLikedItemsMappingRepository;
+        this.googleCredRepository = googleCredRepository;
         this.userLogDataAccessor = userLogDataAccessor;
+        this.environment = environment;
     }
 
     private Pair<String, Boolean> validateProduct(org.example.Models.CommunicationModels.CarrierModels.Product product) {
@@ -180,15 +202,90 @@ public class ProductDataAccessor extends BaseDataAccessor implements IProductSub
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Response<Long> addProduct(org.example.Models.CommunicationModels.CarrierModels.Product product) {
+        // clean the data set category id
+        ProductCategory productCategory = productCategoryRepository.findProductCategoryByName(product.getCategory());
+        if(!StringUtils.hasText(productCategory.getName())) {
+            return new Response<>(false, ErrorMessages.ProductCategoryErrorMessages.InvalidId, null);
+        }
+        product.setCategoryId(productCategory.getCategoryId());
+
         Pair<String, Boolean> validation = validateProduct(product);
         if(!validation.getValue()){
             return new Response<>(false, validation.getKey(), null);
         }
 
+        // save product to db
         Product savedProduct = productRepository.save(HelperUtils.copyFields(product, Product.class));
+        StringBuilder errors = new StringBuilder();
+        {
+            // upload the images to firebase server if the image is base 64
+            Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
+            if (googleCred.isPresent()) {
+                FirebaseHelper firebaseHelper = new FirebaseHelper(HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
+                Map<String, Supplier<String>> imageGetters = new HashMap<>();
+                imageGetters.put("Main", product::getMainImage);
+                imageGetters.put("Top", product::getTopImage);
+                imageGetters.put("Bottom", product::getBottomImage);
+                imageGetters.put("Front", product::getFrontImage);
+                imageGetters.put("Back", product::getBackImage);
+                imageGetters.put("Right", product::getRightImage);
+                imageGetters.put("Left", product::getLeftImage);
+                imageGetters.put("Detail", product::getDetailsImage);
+                imageGetters.put("Defect", product::getDefectImage);
+                imageGetters.put("Additional_1", product::getAdditionalImage1);
+                imageGetters.put("Additional_2", product::getAdditionalImage2);
+                imageGetters.put("Additional_3", product::getAdditionalImage3);
+
+                // Loop through the keys of the imageGetters map directly
+                for (String key : imageGetters.keySet()) {
+                    String image = imageGetters.get(key).get();  // Get the image (either base64 or URL)
+
+                    if (!StringUtils.hasText(image)) {
+                        continue;
+                    }
+
+                    // Check if the image is a URL and if it is, convert to base64
+                    if (Validations.isValidUrl(image)) {
+                        try {
+                            URL url = new URL(image);
+                            try (InputStream inputStream = url.openStream()) {
+                                byte[] imageBytes = inputStream.readAllBytes();
+                                image =  Base64.getEncoder().encodeToString(imageBytes);
+                            }
+                        } catch (Exception e) {
+                            errors.append("Failed to convert URL to Base64 for: ").append(key).append("\n");
+                            continue;  // Skip to the next image
+                        }
+                    }
+
+                    // Define the file path for Firebase upload
+                    String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default")
+                            + "/"
+                            + getCarrierDetails().getDatabaseName()
+                            + "/Products"
+                            + "/" + savedProduct.getProductId() + "-" + key + ".png";
+
+                    // Upload the file to Firebase
+                    boolean isFileUploadSuccess = firebaseHelper.uploadFileToFirebase(image, filePath);
+
+                    if (!isFileUploadSuccess) {
+                        errors
+                                .append("Product has been created but failed to upload file for: ")
+                                .append(key)
+                                .append(" \n");
+                    }
+                }
+            }
+
+            if(StringUtils.hasText(errors.toString())) {
+                return new Response<>(false, errors.toString(), savedProduct.getProductId());
+            }
+        }
+
         userLogDataAccessor.logData(getUserId(),
                 SuccessMessages.ProductsSuccessMessages.InsertProduct + " " + savedProduct.getProductId(),
                 ApiRoutes.ProductsSubRoute.ADD_PRODUCT);
+
         return new Response<>(true, SuccessMessages.ProductsSuccessMessages.InsertProduct, savedProduct.getProductId());
     }
 
@@ -200,12 +297,100 @@ public class ProductDataAccessor extends BaseDataAccessor implements IProductSub
             return new Response<>(false, ErrorMessages.ProductErrorMessages.InvalidId, null);
         }
 
+        // clean the data set category id
+        ProductCategory productCategory = productCategoryRepository.findProductCategoryByName(product.getCategory());
+        if(!StringUtils.hasText(productCategory.getName())) {
+            return new Response<>(false, ErrorMessages.ProductCategoryErrorMessages.InvalidId, null);
+        }
+        product.setCategoryId(productCategory.getCategoryId());
+
         Pair<String, Boolean> validation = validateProduct(product);
         if(!validation.getValue()){
             return new Response<>(false, validation.getKey(), null);
         }
 
         Product savedProduct = productRepository.save(HelperUtils.copyFields(product, Product.class));
+
+        StringBuilder errors = new StringBuilder();
+        {
+            {
+                // Upload the images to Firebase server if the image is base64 or from URL
+                Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
+                if (googleCred.isPresent()) {
+                    FirebaseHelper firebaseHelper = new FirebaseHelper(HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
+                    Map<String, Supplier<String>> imageGetters = new HashMap<>();
+                    imageGetters.put("Main", product::getMainImage);
+                    imageGetters.put("Top", product::getTopImage);
+                    imageGetters.put("Bottom", product::getBottomImage);
+                    imageGetters.put("Front", product::getFrontImage);
+                    imageGetters.put("Back", product::getBackImage);
+                    imageGetters.put("Right", product::getRightImage);
+                    imageGetters.put("Left", product::getLeftImage);
+                    imageGetters.put("Detail", product::getDetailsImage);
+                    imageGetters.put("Defect", product::getDefectImage);
+                    imageGetters.put("Additional_1", product::getAdditionalImage1);
+                    imageGetters.put("Additional_2", product::getAdditionalImage2);
+                    imageGetters.put("Additional_3", product::getAdditionalImage3);
+
+                    // Loop through the keys of the imageGetters map directly
+                    for (String key : imageGetters.keySet()) {
+                        String image = imageGetters.get(key).get();  // Get the image (either base64 or URL)
+
+                        if (!StringUtils.hasText(image)) {
+                            continue;
+                        }
+
+                        // Check if the image is a URL and if it is, convert to base64
+                        if (Validations.isValidUrl(image)) {
+                            try {
+                                URL url = new URL(image);
+                                try (InputStream inputStream = url.openStream()) {
+                                    byte[] imageBytes = inputStream.readAllBytes();
+                                    image = Base64.getEncoder().encodeToString(imageBytes);
+                                }
+                            } catch (Exception e) {
+                                errors.append("Failed to convert URL to Base64 for: ").append(key).append("\n");
+                                continue;  // Skip to the next image
+                            }
+                        }
+
+                        // Define the file path for Firebase upload
+                        String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default")
+                                + "/"
+                                + getCarrierDetails().getDatabaseName()
+                                + "/Products"
+                                + "/" + savedProduct.getProductId() + "-" + key + ".png";
+
+                        // Check if the image already exists in Firebase and delete it if it does
+                        try {
+                            byte[] existingFile = firebaseHelper.downloadFileAsBytesFromFirebase(filePath);
+                            if (existingFile != null) {
+                                // If file exists, delete the old file
+                                firebaseHelper.deleteFile(filePath);
+                            }
+                        } catch (IOException e) {
+                            // If the file doesn't exist (or an error occurs), we skip deleting
+                            // and proceed to uploading the new file.
+                        }
+
+                        // Upload the file to Firebase
+                        boolean isFileUploadSuccess = firebaseHelper.uploadFileToFirebase(image, filePath);
+
+                        if (!isFileUploadSuccess) {
+                            errors
+                                    .append("Product has been updated but failed to upload file for: ")
+                                    .append(key)
+                                    .append(" \n");
+                        }
+                    }
+                }
+
+                if (StringUtils.hasText(errors.toString())) {
+                    return new Response<>(false, errors.toString(), savedProduct.getProductId());
+                }
+            }
+        }
+
         userLogDataAccessor.logData(getUserId(),
                 SuccessMessages.ProductsSuccessMessages.UpdateProduct + " " + savedProduct.getProductId(),
                 ApiRoutes.ProductsSubRoute.EDIT_PRODUCT);

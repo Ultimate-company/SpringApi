@@ -27,6 +27,12 @@ public class ProductCategoryDataAccessor extends BaseDataAccessor implements IPr
     }
 
     @Override
+    public Response<List<ProductCategory>> findCategoriesWithoutChildren() {
+        return new Response<>(true, SuccessMessages.ProductCategorySuccessMessages.GetProductCategories,
+                HelperUtils.copyFields(productCategoryRepository.findCategoriesWithoutChildren(), ProductCategory.class));
+    }
+
+    @Override
     public Response<List<ProductCategory>> getRootCategories() {
         return new Response<>(true, SuccessMessages.ProductCategorySuccessMessages.GetProductCategories,
                 HelperUtils.copyFields(productCategoryRepository.findRootCategories(), ProductCategory.class));

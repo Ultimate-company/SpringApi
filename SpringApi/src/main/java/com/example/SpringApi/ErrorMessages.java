@@ -164,6 +164,8 @@ public class ErrorMessages {
 
         // Additional error messages
         public static final String ER001 = "Pickup location is required and should be valid.";
+        public static final String ER002 = "Email on address is required and should be valid.";
+        public static final String ER003 = "Phone on address is required and should be valid.";
     }
 
     public static class PromoErrorMessages{
@@ -210,6 +212,7 @@ public class ErrorMessages {
         public static final String ER005 = "Assigned Agent user id should be present in the database.";
         public static final String ER006 = "Website should be correctly formatted.";
         public static final String ER007 = "Invalid lead status, the lead status should be one of the following: ";
+        public static final String ER008 = "Lead title is required.";
     }
 
     public static class SalesOrderErrorMessages {

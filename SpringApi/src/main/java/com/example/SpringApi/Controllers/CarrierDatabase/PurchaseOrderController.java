@@ -1,7 +1,6 @@
 package com.example.SpringApi.Controllers.CarrierDatabase;
 
 import com.example.SpringApi.Services.CarrierDatabase.PurchaseOrderDataAccessor;
-import com.itextpdf.text.DocumentException;
 import freemarker.template.TemplateException;
 import org.example.ApiRoutes;
 import org.example.Models.Authorizations;
@@ -66,7 +65,7 @@ public class PurchaseOrderController {
 
     @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.VIEW_PURCHASE_ORDERS_PERMISSION +"')")
     @GetMapping(ApiRoutes.PurchaseOrderSubRoute.GET_PURCHASE_ORDER_PDF)
-    public ResponseEntity<Response<String>> getPurchaseOrderPDF(@RequestParam long id) throws TemplateException, IOException, DocumentException {
+    public ResponseEntity<Response<String>> getPurchaseOrderPDF(@RequestParam long id) throws TemplateException, IOException {
         return ResponseEntity.ok(accessor.getPurchaseOrderPDF(id));
     }
 }

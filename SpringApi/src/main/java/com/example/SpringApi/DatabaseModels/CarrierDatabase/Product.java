@@ -63,42 +63,6 @@ public class Product {
     @Column(name = "ModificationHtml")
     private String modificationHtml;
 
-    @Column(name = "MainImage", nullable = false)
-    private String mainImage;
-
-    @Column(name = "TopImage", nullable = false)
-    private String topImage;
-
-    @Column(name = "BottomImage", nullable = false)
-    private String bottomImage;
-
-    @Column(name = "FrontImage", nullable = false)
-    private String frontImage;
-
-    @Column(name = "BackImage", nullable = false)
-    private String backImage;
-
-    @Column(name = "RightImage", nullable = false)
-    private String rightImage;
-
-    @Column(name = "LeftImage", nullable = false)
-    private String leftImage;
-
-    @Column(name = "DetailsImage", nullable = false)
-    private String detailsImage;
-
-    @Column(name = "DefectImage")
-    private String defectImage;
-
-    @Column(name = "AdditionalImage1")
-    private String additionalImage1;
-
-    @Column(name = "AdditionalImage2")
-    private String additionalImage2;
-
-    @Column(name = "AdditionalImage3")
-    private String additionalImage3;
-
     @Column(name = "Price", nullable = false)
     private double price;
 
