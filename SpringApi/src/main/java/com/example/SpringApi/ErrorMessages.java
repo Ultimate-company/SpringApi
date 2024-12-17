@@ -6,6 +6,18 @@ public class ErrorMessages {
     public static final String InvalidPhone = "Invalid phone number, please check the entered phone number. Phone number should be of 10 numbers";
     public static final String Unauthorized = "You are unauthorized to do this action.";
 
+    public static class EventErrorMessages {
+        // standard error messages
+        public static final String InvalidId = "Invalid event id provided.";
+
+        // additional error messages
+        public static final String ER001 = "Event cannot be null.";
+        public static final String ER002 = "Event name is required.";
+        public static final String ER003 = "Event description and event start/end times are required, and start time must not be after end time.";
+        public static final String ER004 = "Time zone is required and must be a valid time zone.";
+        public static final String ER005 = "Event location is required.";
+    }
+
     public static class SupportErrorMessages {
         // Additional Error messages
         public static final String ER001 = "The ticket has been created but there was an error uploading the attachments to the ticket, please try editing the ticket again in sometime.";
