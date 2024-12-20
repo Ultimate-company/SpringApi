@@ -105,7 +105,7 @@ public class UserControllerTest {
         long userId = 1L;
 
         // mock the data accessor
-        Response<UserResponseModel> response = new Response<>(true, "Success", new UserResponseModel());
+        Response<List<UserResponseModel>> response = new Response<>(true, "Success", new ArrayList<>());
         when(userDataAccessor.getUsersByIds(any(List.class))).thenReturn(response);
 
         // test the controller
