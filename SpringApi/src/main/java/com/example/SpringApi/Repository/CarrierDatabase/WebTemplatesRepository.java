@@ -16,6 +16,7 @@ public interface WebTemplatesRepository extends JpaRepository<WebTemplate, Long>
             "where (:includeDeleted = true OR w.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'webTemplateId' THEN CONCAT(w.webTemplateId, '') " +
             "WHEN 'Url' THEN CONCAT(w.url, '') " +
             "ELSE '' END) LIKE " +
             "(CASE :condition " +
@@ -25,8 +26,7 @@ public interface WebTemplatesRepository extends JpaRepository<WebTemplate, Long>
             "WHEN 'endsWith' THEN CONCAT('%', :filterExpr) " +
             "WHEN 'isEmpty' THEN '' " +
             "WHEN 'isNotEmpty' THEN '%' " +
-            "ELSE '' END)) " +
-            "order by w.webTemplateId asc ")
+            "ELSE '' END)) ")
     Page<Object[]> findPaginatedWebTemplates(@Param("columnName") String columnName,
                                             @Param("condition") String condition,
                                             @Param("filterExpr") String filterExpr,

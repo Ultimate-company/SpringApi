@@ -207,7 +207,6 @@ public class Authorization{
             ex.printStackTrace();
         }
 
-
         // Check if the request contains the "CarrierId" parameter
         if (request.getParameter("CarrierId") != null) {
             // Ignore the value of "CarrierId" as it is not used in this method
@@ -235,8 +234,8 @@ public class Authorization{
             }
 
             //check if the userid and carrier are actually mapped together
-            UserCarrierMapping userCarrierMapping = userCarrierMappingRepository.findByUserIdAndCarrierId(user.get().getUserId(), carrier.get().getCarrierId());
-            if(userCarrierMapping == null){
+            List<UserCarrierMapping> userCarrierMappings = userCarrierMappingRepository.findByUserIdsAndCarrierId(Collections.singletonList(user.get().getUserId()), carrier.get().getCarrierId());
+            if(userCarrierMappings == null || userCarrierMappings.isEmpty()){
                 throw new PermissionException("User is not present in the carrier id provided, a user can only access a carrier he is a part of.");
             }
 

@@ -62,7 +62,9 @@ public class PromoDataAccessor extends BaseDataAccessor implements IPromoSubTran
     public Response<PaginationBaseResponseModel<org.example.Models.CommunicationModels.CarrierModels.Promo>> getPromosInBatches(PaginationBaseRequestModel paginationBaseRequestModel) {
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(Arrays.asList("promoCode", "description", "discountValue"));
+            Set<String> validColumns = new HashSet<>(Arrays.asList(
+                    "promoId",
+                    "promoCode", "description", "discountValue"));
 
             if(!validColumns.contains(paginationBaseRequestModel.getColumnName())){
                 return new Response<>(false,

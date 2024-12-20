@@ -16,8 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/" + ApiRoutes.ApiControllerNames.LEAD + "/")
-public class
-LeadController {
+public class LeadController {
 
     private final ILeadSubTranslator accessor;
     @Autowired

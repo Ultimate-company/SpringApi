@@ -19,6 +19,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             "and (:includeDeleted = true OR u.deleted = false) " +
             "AND (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'userId' THEN CONCAT(u.userId, '') " +
             "WHEN 'firstName' THEN CONCAT(u.firstName, '') " +
             "WHEN 'lastName' THEN CONCAT(u.lastName, '') " +
             "WHEN 'loginName' THEN CONCAT(u.loginName, '') " +

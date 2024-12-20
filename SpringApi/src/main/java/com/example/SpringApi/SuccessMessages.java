@@ -3,6 +3,15 @@ package com.example.SpringApi;
 public class SuccessMessages {
     public static final String Success = "Success.";
 
+    public static class EventSuccessMessages {
+        // standard success messages
+        public static final String GetEvents = "Successfully got events.";
+        public static final String InsertEvent = "Successfully inserted event.";
+        public static final String UpdateEvent = "Successfully updated event.";
+        public static final String GetEvent = "Successfully got event details.";
+        public static final String ToggleEvent = "Successfully toggled event.";
+    }
+
     public static class CarrierSuccessMessages {
         // standard success messages
         public static final String GetCarrier = "Successfully got carriers details.";

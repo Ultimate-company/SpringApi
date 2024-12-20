@@ -16,6 +16,7 @@ public interface PromoRepository extends JpaRepository<Promo, Long> {
             "where (:includeDeleted = true OR p.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'promoId' THEN CONCAT(p.promoId, '') " +
             "WHEN 'promoCode' THEN CONCAT(p.promoCode, '') " +
             "WHEN 'description' THEN CONCAT(p.description, '') " +
             "WHEN 'discountValue' THEN CONCAT(p.discountValue, '') " +

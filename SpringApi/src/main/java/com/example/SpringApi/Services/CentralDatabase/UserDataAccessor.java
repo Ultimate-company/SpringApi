@@ -1,13 +1,16 @@
 package com.example.SpringApi.Services.CentralDatabase;
 
-import com.example.SpringApi.DatabaseModels.CarrierDatabase.*;
+import com.example.SpringApi.DatabaseModels.CarrierDatabase.Address;
+import com.example.SpringApi.DatabaseModels.CarrierDatabase.Permissions;
+import com.example.SpringApi.DatabaseModels.CarrierDatabase.UserGroup;
+import com.example.SpringApi.DatabaseModels.CarrierDatabase.UserGroupsUsersMap;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.User;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.UserCarrierMapping;
 import com.example.SpringApi.DatabaseModels.CentralDatabase.UserCarrierPermissionMapping;
 import com.example.SpringApi.ErrorMessages;
 import com.example.SpringApi.Repository.CarrierDatabase.AddressRepository;
-import com.example.SpringApi.Repository.CarrierDatabase.UserGroupRepository;
 import com.example.SpringApi.Repository.CarrierDatabase.PermissionRepository;
+import com.example.SpringApi.Repository.CarrierDatabase.UserGroupRepository;
 import com.example.SpringApi.Repository.CarrierDatabase.UserGroupsUsersMapRepository;
 import com.example.SpringApi.Repository.CentralDatabase.*;
 import com.example.SpringApi.Services.BaseDataAccessor;
@@ -18,7 +21,6 @@ import org.example.ApiRoutes;
 import org.example.CommonHelpers.*;
 import org.example.Models.CommunicationModels.CentralModels.Carrier;
 import org.example.Models.CommunicationModels.CentralModels.GoogleCred;
-import org.example.Models.RequestModels.ApiRequestModels.ImportUsersRequestModel;
 import org.example.Models.RequestModels.ApiRequestModels.UsersRequestModel;
 import org.example.Models.RequestModels.GridRequestModels.GetUsersRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.PaginationBaseResponseModel;
@@ -35,9 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class UserDataAccessor extends BaseDataAccessor implements IUserSubTranslator {
@@ -51,7 +51,7 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     private final GoogleCredRepository googleCredRepository;
     private final UserCarrierPermissionMappingRepository userCarrierPermissionMappingRepository;
     private EmailTemplates emailTemplates;
-    private Environment environment;
+    private final Environment environment;
 
     @Autowired
     public UserDataAccessor(HttpServletRequest request,
@@ -78,10 +78,13 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
         this.userCarrierPermissionMappingRepository = userCarrierPermissionMappingRepository;
         this.environment = environment;
     }
-    private boolean authorizedToFetchThisUserDetails(long requestedUserId){
-        // both the user ids should be present in the same carrier.
-        UserCarrierMapping userCarrierMapping = userCarrierMappingRepository.findByUserIdAndCarrierId(requestedUserId, getCarrierId());
-        return userCarrierMapping != null;
+    private boolean authorizedToFetchThisUserDetails(List<Long> requestedUserIds) {
+        // Fetch all mappings for the requested user IDs and the current carrier.
+        List<UserCarrierMapping> userCarrierMappings =
+                userCarrierMappingRepository.findByUserIdsAndCarrierId(requestedUserIds, getCarrierId());
+
+        // Check if all requested user IDs are present in the same carrier.
+        return userCarrierMappings.size() == requestedUserIds.size();
     }
 
     private Pair<String, Boolean> validateUser(org.example.Models.CommunicationModels.CentralModels.User user,
@@ -135,7 +138,7 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     @Override
     public Response<org.example.Models.CommunicationModels.CarrierModels.Permissions> getUserPermissionsById(long id) {
         // check if the current user is authorized to fetch details for the given user.
-        boolean authorized = authorizedToFetchThisUserDetails(id);
+        boolean authorized = authorizedToFetchThisUserDetails(Collections.singletonList(id));
         if(!authorized){
             return new Response<>(false, ErrorMessages.UserErrorMessages.Unauthorized, null);
         }
@@ -170,37 +173,30 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     }
 
     @Override
-    public Response<UserResponseModel> getUserById(long userId) throws IOException {
+    public Response<List<UserResponseModel>> getUsersByIds(List<Long> userIds) {
         // check if the current user is authorized to fetch details for the given user.
-        boolean authorized = authorizedToFetchThisUserDetails(userId);
+        boolean authorized = authorizedToFetchThisUserDetails(userIds);
         if(!authorized){
             return new Response<>(false, ErrorMessages.UserErrorMessages.Unauthorized, null);
         }
 
-        UserResponseModel userResponseModel = new UserResponseModel();
-        Optional<User> user = userRepository.findById(userId);
-        if(user.isEmpty()) {
+        // fetch all user by userids
+        List<User> users = userRepository.findAllById(userIds);
+        if(users.isEmpty() || users.size() != userIds.size()) {
             return new Response<>(false, ErrorMessages.UserErrorMessages.InvalidId, null);
         }
-        userResponseModel.setUser(HelperUtils.copyFields(user.get(), org.example.Models.CommunicationModels.CentralModels.User.class));
 
-        // get the user profile picture if it exists
         Optional<com.example.SpringApi.DatabaseModels.CentralDatabase.GoogleCred> googleCred = googleCredRepository.findById(getCarrierDetails().getGoogleCredId());
-        if (googleCred.isPresent()) {
-            String filePath = (environment.getActiveProfiles().length > 0 ? environment.getActiveProfiles()[0] : "default")
-                    + "/"
-                    + getCarrierDetails().getDatabaseName()
-                    + "/UserProfiles"
-                    + "/" + user.get().getUserId() + "-" + user.get().getLastName() + ".png";
-
-            FirebaseHelper firebaseHelper = new FirebaseHelper(HelperUtils.copyFields(googleCred.get(), GoogleCred.class));
-            byte[] byteImage = firebaseHelper.downloadFileAsBytesFromFirebase(filePath);
-            if(byteImage != null) {
-                userResponseModel.setProfilePictureBase64(Base64.getEncoder().encodeToString(byteImage));
-            }
+        if (googleCred.isEmpty()) {
+            return new Response<>(false, ErrorMessages.CarrierErrorMessages.ER007, null);
         }
 
-        return new Response<>(true, SuccessMessages.UserSuccessMessages.GetUser, userResponseModel);
+        List<UserResponseModel> userResponseModels = users.stream()
+                .map(user -> new UserResponseModel()
+                        .setUser(HelperUtils.copyFields(user, org.example.Models.CommunicationModels.CentralModels.User.class)))
+                .toList();
+
+        return new Response<>(true, SuccessMessages.UserSuccessMessages.GetUser, userResponseModels);
     }
 
     @Override
@@ -325,7 +321,7 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     @Transactional(rollbackFor = Exception.class)
     public Response<Long> updateUser(UsersRequestModel usersRequestModel) throws Exception {
         // check if the current user is authorized to fetch details for the given user.
-        boolean authorized = authorizedToFetchThisUserDetails(usersRequestModel.getUser().getUserId());
+        boolean authorized = authorizedToFetchThisUserDetails(Collections.singletonList(usersRequestModel.getUser().getUserId()));
         if(!authorized){
             return new Response<>(false, ErrorMessages.UserErrorMessages.Unauthorized, null);
         }
@@ -421,7 +417,7 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     @Transactional(rollbackFor = Exception.class)
     public Response<Long> toggleUser(long userId) {
         // check if the current user is authorized to fetch details for the given user.
-        boolean authorized = authorizedToFetchThisUserDetails(userId);
+        boolean authorized = authorizedToFetchThisUserDetails(Collections.singletonList(userId));
         if(!authorized){
             return new Response<>(false, ErrorMessages.UserErrorMessages.Unauthorized, null);
         }
@@ -455,7 +451,10 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     public Response<PaginationBaseResponseModel<org.example.Models.CommunicationModels.CentralModels.User>> fetchUsersInCarrierInBatches(GetUsersRequestModel getUsersRequestModel) {
         // validate the column names
         if(StringUtils.hasText(getUsersRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(Arrays.asList("firstName", "lastName", "loginName", "role", "dob", "phone"));
+            Set<String> validColumns = new HashSet<>(Arrays.asList(
+                    "userId",
+                    "firstName", "lastName", "loginName",
+                    "role", "dob", "phone"));
 
             if(!validColumns.contains(getUsersRequestModel.getColumnName())){
                 return new Response<>(false,

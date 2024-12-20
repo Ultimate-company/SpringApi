@@ -159,7 +159,10 @@ public class ProductDataAccessor extends BaseDataAccessor implements IProductSub
     private Response<PaginationBaseResponseModel<ProductsResponseModel>> getProductInBatchesInternal(PaginationBaseRequestModel paginationBaseRequestModel, Set<Long> filteredProductIds) {
         // Validate the column names
         if (StringUtils.hasText(paginationBaseRequestModel.getColumnName())) {
-            Set<String> validColumns = new HashSet<>(Arrays.asList("title", "type", "upc", "price", "discount", "availableStock", "dimensions"));
+            Set<String> validColumns = new HashSet<>(Arrays.asList(
+                    "productId",
+                    "title", "type", "upc", "price",
+                    "discount", "availableStock", "dimensions"));
 
             if (!validColumns.contains(paginationBaseRequestModel.getColumnName())) {
                 return new Response<>(false, ErrorMessages.InvalidColumn + String.join(",", validColumns), null);

@@ -24,6 +24,7 @@ public interface UserGroupRepository extends JpaRepository<UserGroup, Long> {
             "WHERE (:includeDeleted = true OR ug.deleted = false) " +
             "AND (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'userGroupId' THEN CONCAT(ug.userGroupId, '') " +
             "WHEN 'name' THEN CONCAT(ug.name, '') " +
             "WHEN 'description' THEN CONCAT(ug.description, '') " +
             "ELSE '' END) LIKE " +

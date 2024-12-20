@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -125,9 +126,9 @@ public class CarrierDataAccessor extends BaseDataAccessor implements ICarrierSub
 
     @Override
     public Response<Boolean> isUserMappedToCarrier() {
-        UserCarrierMapping userCarrierMapping = userCarrierMappingRepository.findByUserIdAndCarrierId(getUserId(), getCarrierId());
+        List<UserCarrierMapping> userCarrierMappings = userCarrierMappingRepository.findByUserIdsAndCarrierId(Collections.singletonList(getUserId()), getCarrierId());
 
-        return userCarrierMapping == null ? new Response<>(false, ErrorMessages.CarrierErrorMessages.ER001, false)
+        return userCarrierMappings == null || userCarrierMappings.isEmpty() ? new Response<>(false, ErrorMessages.CarrierErrorMessages.ER001, false)
                 : new Response<>(true, ErrorMessages.CarrierErrorMessages.ER001, true);
     }
 

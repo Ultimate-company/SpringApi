@@ -21,6 +21,7 @@ public interface PickupLocationRepository extends JpaRepository<PickupLocation, 
             "where (:includeDeleted = true OR p.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'pickupLocationId' THEN CONCAT(p.pickupLocationId, '') " +
             "WHEN 'locationName' THEN CONCAT(p.addressNickName, '') " +
             "WHEN 'address' THEN CONCAT(a.line1, ' ', a.line2, ' ', a.city, ' ', a.state, ' ', a.zipCode) " +
             "WHEN 'phoneOnAddress' THEN CONCAT(a.phoneOnAddress, '') " +

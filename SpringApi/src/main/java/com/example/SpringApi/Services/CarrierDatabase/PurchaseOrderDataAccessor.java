@@ -173,7 +173,9 @@ public class PurchaseOrderDataAccessor extends BaseDataAccessor implements IPurc
     public Response<PaginationBaseResponseModel<PurchaseOrderResponseModel>> getPurchaseOrdersInBatches(PaginationBaseRequestModel paginationBaseRequestModel) {
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(List.of("id", "address", "expectedShipmentDate",
+            Set<String> validColumns = new HashSet<>(List.of(
+                    "purchaseOrderId",
+                    "address", "expectedShipmentDate",
                     "vendorNumber", "orderReceipt", "assignedLead"));
 
             if(!validColumns.contains(paginationBaseRequestModel.getColumnName())){

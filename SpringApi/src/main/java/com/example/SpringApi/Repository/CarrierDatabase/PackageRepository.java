@@ -26,6 +26,7 @@ public interface PackageRepository extends JpaRepository<Package, Long> {
             "where (:includeDeleted = true OR p.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'packageId' THEN CONCAT(p.packageId, '') " +
             "WHEN 'dimensions' THEN CONCAT(p.length, ' ', p.breadth, ' ', p.height) " +
             "WHEN 'quantity' THEN CONCAT(p.quantity, '') " +
             "ELSE '' END) LIKE " +
