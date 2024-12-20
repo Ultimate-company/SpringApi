@@ -21,6 +21,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -105,10 +106,10 @@ public class UserControllerTest {
 
         // mock the data accessor
         Response<UserResponseModel> response = new Response<>(true, "Success", new UserResponseModel());
-        when(userDataAccessor.getUserById(any(Long.class))).thenReturn(response);
+        when(userDataAccessor.getUsersByIds(any(List.class))).thenReturn(response);
 
         // test the controller
-        ResponseEntity<Response<UserResponseModel>> responseEntity = userController.getUserById(userId);
+        ResponseEntity<Response<List<UserResponseModel>>> responseEntity = userController.getUserById(Collections.singletonList(userId));
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatusCode.valueOf(200));
         assertThat(Objects.requireNonNull(responseEntity.getBody()).isSuccess()).isEqualTo(true);
         assertThat(Objects.requireNonNull(responseEntity.getBody()).getItem()).isNotNull();
