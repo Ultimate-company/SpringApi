@@ -81,7 +81,10 @@ public class PickupLocationDataAccessor extends BaseDataAccessor implements IPic
     public Response<PaginationBaseResponseModel<PickupLocationResponseModel>> getPickupLocationsInBatches(PaginationBaseRequestModel paginationBaseRequestModel) {
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(Arrays.asList("locationName", "address", "nameOnAddress", "phoneOnAddress", "emailAtAddress" ));
+            Set<String> validColumns = new HashSet<>(Arrays.asList(
+                    "pickupLocationId",
+                    "locationName", "address", "nameOnAddress",
+                    "phoneOnAddress", "emailAtAddress" ));
 
             if(!validColumns.contains(paginationBaseRequestModel.getColumnName())){
                 return new Response<>(false,

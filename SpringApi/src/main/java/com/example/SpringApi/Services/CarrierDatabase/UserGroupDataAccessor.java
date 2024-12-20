@@ -74,7 +74,7 @@ public class UserGroupDataAccessor extends BaseDataAccessor implements IUserGrou
     public Response<PaginationBaseResponseModel<UserGroupResponseModel>> getUserGroupsInBatches(PaginationBaseRequestModel paginationBaseRequestModel) {
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(Arrays.asList("name", "description"));
+            Set<String> validColumns = new HashSet<>(Arrays.asList("userGroupId", "name", "description"));
 
             if(!validColumns.contains(paginationBaseRequestModel.getColumnName())){
                 return new Response<>(false,

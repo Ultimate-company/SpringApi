@@ -203,7 +203,7 @@ public class SalesOrderDataAccessor extends BaseDataAccessor implements ISalesOr
     public Response<PaginationBaseResponseModel<SalesOrderResponseModel>> getSalesOrdersInBatches(GetSalesOrdersRequestModel getSalesOrdersRequestModel) {
         // validate the column names
         if(StringUtils.hasText(getSalesOrdersRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(List.of("id", "billingAddress", "shippingAddress",
+            Set<String> validColumns = new HashSet<>(List.of("salesOrderId", "billingAddress", "shippingAddress",
                     "purchaseOrderCreatedBy", "approvedBy", "assignedLead"));
 
             if(!validColumns.contains(getSalesOrdersRequestModel.getColumnName())){

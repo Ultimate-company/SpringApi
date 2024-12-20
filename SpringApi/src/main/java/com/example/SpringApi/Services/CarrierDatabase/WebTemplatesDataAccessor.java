@@ -161,7 +161,7 @@ public class WebTemplatesDataAccessor extends BaseDataAccessor implements IWebTe
     public Response<PaginationBaseResponseModel<WebTemplateResponseModel>> getWebTemplatesInBatches(PaginationBaseRequestModel paginationBaseRequestModel) {
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(List.of("Url"));
+            Set<String> validColumns = new HashSet<>(List.of("webTemplateId", "Url"));
 
             if(!validColumns.contains(paginationBaseRequestModel.getColumnName())){
                 return new Response<>(false,

@@ -21,6 +21,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>{
             "and (:filteredProductIds IS NULL OR p.productId IN :filteredProductIds) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'productId' THEN CONCAT(p.productId, '') " +
             "WHEN 'dimensions' THEN CONCAT(p.length, ' ', p.breadth, ' ', p.height) " +
             "WHEN 'title' THEN CONCAT(p.title, '') " +
             "WHEN 'type' THEN CONCAT(p.availableStock, '') " +

@@ -312,7 +312,7 @@ public class MessageDataAccessor extends BaseDataAccessor implements IMessageSub
     public Response<PaginationBaseResponseModel<MessageResponseModel>> getMessagesInBatches(PaginationBaseRequestModel paginationBaseRequestModel) {
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(Arrays.asList("title", "publishDate"));
+            Set<String> validColumns = new HashSet<>(Arrays.asList("messageId", "title", "publishDate"));
 
             if(!validColumns.contains(paginationBaseRequestModel.getColumnName())){
                 return new Response<>(false,

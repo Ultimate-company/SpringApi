@@ -24,7 +24,7 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
             "(:includeDeleted = true OR s.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
-            "WHEN 'id' THEN CONCAT(s.salesOrderId, '') " +
+            "WHEN 'salesOrderId' THEN CONCAT(s.salesOrderId, '') " +
             "WHEN 'assignedLead' THEN CONCAT(l.firstName, ' ', l.lastName, ' ', l.email) " +
             "WHEN 'billingAddress' THEN CONCAT(billingAddress.line1, ' ', billingAddress.line2, ' ', billingAddress.city, ' ', billingAddress.state, ' ', billingAddress.zipCode) " +
             "WHEN 'shippingAddress' THEN CONCAT(shippingAddress.line1, ' ', shippingAddress.line2, ' ', shippingAddress.city, ' ', shippingAddress.state, ' ', shippingAddress.zipCode) " +

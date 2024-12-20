@@ -18,6 +18,7 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
             "where (:includeDeleted = true OR l.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'leadId' THEN CONCAT(l.leadId, '') " +
             "WHEN 'firstName' THEN CONCAT(l.firstName, '') " +
             "WHEN 'lastName' THEN CONCAT(l.lastName, '') " +
             "WHEN 'email' THEN CONCAT(l.email, '') " +

@@ -16,6 +16,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             "where (:includeDeleted = true OR m.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
+            "WHEN 'messageId' THEN CONCAT(m.messageId, '') " +
             "WHEN 'title' THEN CONCAT(m.title, '') " +
             "WHEN 'publishDate' THEN CONCAT(m.publishDate, '') " +
             "ELSE '' END) LIKE " +

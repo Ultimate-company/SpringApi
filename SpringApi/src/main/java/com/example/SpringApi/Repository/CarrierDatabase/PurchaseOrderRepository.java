@@ -16,7 +16,7 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
             "where (:includeDeleted = true OR p.deleted = false) " +
             "and (COALESCE(:filterExpr, '') = '' OR " +
             "(CASE :columnName " +
-            "WHEN 'id' THEN CONCAT(p.purchaseOrderId, '') " +
+            "WHEN 'purchaseOrderId' THEN CONCAT(p.purchaseOrderId, '') " +
             "WHEN 'address' THEN CONCAT(a.line1, ' ', a.line2, ' ', a.city, ' ', a.state, ' ', a.zipCode) " +
             "WHEN 'expectedShipmentDate' THEN CONCAT(p.expectedShipmentDate, '') " +
             "WHEN 'vendorNumber' THEN CONCAT(p.vendorNumber, '') " +

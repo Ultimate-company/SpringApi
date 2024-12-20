@@ -101,6 +101,7 @@ public class LeadDataAccessor extends BaseDataAccessor implements ILeadSubTransl
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())) {
             Set<String> validColumns = new HashSet<>(Arrays.asList(
+                    "leadId",
                     "firstName", "lastName", "email", "address", "website",
                     "phone", "companySize", "title", "leadAssignedTo",
                     "leadCreatedBy", "leadStatus"

@@ -114,7 +114,9 @@ public class PackageDataAccessor extends BaseDataAccessor implements IPackageSub
     public Response<PaginationBaseResponseModel<org.example.Models.CommunicationModels.CarrierModels.Package>> getPackagesInBatches(PaginationBaseRequestModel paginationBaseRequestModel) {
         // validate the column names
         if(StringUtils.hasText(paginationBaseRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(Arrays.asList("dimensions", "quantity"));
+            Set<String> validColumns = new HashSet<>(Arrays.asList(
+                    "packageId",
+                    "dimensions", "quantity"));
 
             if(!validColumns.contains(paginationBaseRequestModel.getColumnName())){
                 return new Response<>(false,

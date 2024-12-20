@@ -451,7 +451,10 @@ public class UserDataAccessor extends BaseDataAccessor implements IUserSubTransl
     public Response<PaginationBaseResponseModel<org.example.Models.CommunicationModels.CentralModels.User>> fetchUsersInCarrierInBatches(GetUsersRequestModel getUsersRequestModel) {
         // validate the column names
         if(StringUtils.hasText(getUsersRequestModel.getColumnName())){
-            Set<String> validColumns = new HashSet<>(Arrays.asList("firstName", "lastName", "loginName", "role", "dob", "phone"));
+            Set<String> validColumns = new HashSet<>(Arrays.asList(
+                    "userId",
+                    "firstName", "lastName", "loginName",
+                    "role", "dob", "phone"));
 
             if(!validColumns.contains(getUsersRequestModel.getColumnName())){
                 return new Response<>(false,
