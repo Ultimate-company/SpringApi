@@ -2,19 +2,23 @@ package com.example.SpringApi.Services.CarrierDatabase;
 
 import com.example.SpringApi.DatabaseModels.CarrierDatabase.Event;
 import com.example.SpringApi.DatabaseModels.CarrierDatabase.EventUserMapping;
+import com.example.SpringApi.DatabaseModels.CentralDatabase.User;
 import com.example.SpringApi.ErrorMessages;
 import com.example.SpringApi.Repository.CarrierDatabase.EventRepository;
 import com.example.SpringApi.Repository.CarrierDatabase.EventUserMappingRepository;
 import com.example.SpringApi.Repository.CentralDatabase.CarrierRepository;
 import com.example.SpringApi.Services.BaseDataAccessor;
+import com.example.SpringApi.Services.CentralDatabase.UserDataAccessor;
 import com.example.SpringApi.Services.CentralDatabase.UserLogDataAccessor;
 import com.example.SpringApi.SuccessMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.tuple.Pair;
 import org.example.ApiRoutes;
+import org.example.CommonHelpers.DateHelper;
 import org.example.CommonHelpers.HelperUtils;
 import org.example.Models.RequestModels.ApiRequestModels.EventRequestModel;
 import org.example.Models.ResponseModels.ApiResponseModels.EventResponseModel;
+import org.example.Models.ResponseModels.ApiResponseModels.UserResponseModel;
 import org.example.Models.ResponseModels.Response;
 import org.example.Translators.CarrierDatabaseTranslators.Interfaces.IEventSubTranslator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,17 +33,20 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
     private final EventRepository eventRepository;
     private final EventUserMappingRepository eventUserMappingRepository;
     private final UserLogDataAccessor userLogDataAccessor;
+    private final UserDataAccessor userDataAccessor;
 
     @Autowired
     public EventDataAccessor(HttpServletRequest request,
                              CarrierRepository carrierRepository,
                              EventRepository eventRepository,
                              EventUserMappingRepository eventUserMappingRepository,
-                             UserLogDataAccessor userLogDataAccessor) {
+                             UserLogDataAccessor userLogDataAccessor,
+                             UserDataAccessor userDataAccessor) {
         super(request, carrierRepository);
         this.eventRepository = eventRepository;
         this.eventUserMappingRepository = eventUserMappingRepository;
         this.userLogDataAccessor = userLogDataAccessor;
+        this.userDataAccessor = userDataAccessor;
     }
 
     public Pair<String, Boolean> validateEvent(org.example.Models.CommunicationModels.CarrierModels.Event event) {
@@ -61,7 +68,7 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
         if (event.getStartDateTime() == null || event.getEndDateTime() == null) {
             return Pair.of(ErrorMessages.EventErrorMessages.ER003, false);
         }
-        if (event.getStartDateTime().isAfter(event.getEndDateTime())) {
+        if (DateHelper.isStartDateTimeAfterEndDateTime(event.getStartDateTime(), event.getEndDateTime())) {
             return Pair.of(ErrorMessages.EventErrorMessages.ER003, false);
         }
         if (event.getTimeZone() == null
@@ -78,35 +85,49 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
 
     @Override
     public Response<List<EventResponseModel>> getAllEventsForUserIdBasedOnMonth(long userId, int month) {
-        // fetch all event ids for the given userid
-        Map<Long, Boolean> eventRsvpMappings = eventUserMappingRepository.findEventUserMappingByUserId(userId)
+        // Fetch events and create a mapping of event ID to a lightweight EventResponseModel
+        List<EventResponseModel> eventResponseModelList = eventRepository.findEventsByIdsAndMonth(eventUserMappingRepository
+                        .findEventUserMappingByUserId(userId)
+                        .stream()
+                        .map(EventUserMapping::getEventId)
+                        .toList(), month)
                 .stream()
-                .collect(Collectors.toMap(
-                        EventUserMapping::getEventId,
-                        EventUserMapping::getRsvp,
-                        (existing, replacement) -> existing,
-                        HashMap::new
-                ));
+                .map(event -> {
+                    // fetch attendees
+                    List<EventUserMapping> eventUserMappings = eventUserMappingRepository.findEventUserMappingByEventIds(Collections.singletonList(event.getEventId()));
+                    List<Long> userIds = eventUserMappings.stream().map(EventUserMapping::getUserId).toList();
 
-        // filter only the non deleted events and for the given month
-        List<Event> events = eventRepository
-                .findEventsByIdsAndMonth(new ArrayList<>(eventRsvpMappings.keySet()), month);
+                    Response<List<UserResponseModel>> getUsersByIdsResponse = userDataAccessor.getUsersByIds(userIds);
+                    if(!getUsersByIdsResponse.isSuccess()){
+                        return null;
+                    }
 
-        List<EventResponseModel> eventResponseModels = new ArrayList<>();
-        for(Event event : events) {
-            List<EventUserMapping> eventUserMappings = eventUserMappingRepository.findEventUserMappingByEventId(event.getEventId());
-            eventResponseModels.add(new EventResponseModel()
-                    .setEvent(HelperUtils.copyFields(event, org.example.Models.CommunicationModels.CarrierModels.Event.class))
-                    .setAttendees(eventUserMappings.stream().map(EventUserMapping::getUserId).collect(Collectors.toList()))
-                    .setUserIdRsvpMapping(eventUserMappings.stream().collect(Collectors.toMap(
-                            EventUserMapping::getUserId,
-                            EventUserMapping::getRsvp,
-                            (existing, replacement) -> existing,
-                            HashMap::new
-                    ))));
-        }
+                    Map<Long, UserResponseModel> userResponseMap = getUsersByIdsResponse.getItem().stream()
+                            .collect(Collectors.toMap(userResponseModel -> userResponseModel.getUser().getUserId(), userResponseModel -> userResponseModel));
 
-        return new Response<>(true, SuccessMessages.EventSuccessMessages.GetEvents, eventResponseModels);
+                    return new EventResponseModel()
+                            .setEvent(HelperUtils.copyFields(event, org.example.Models.CommunicationModels.CarrierModels.Event.class))
+                            .setAttendees(userIds)
+                            .setAcceptedUsers(eventUserMappings.stream()
+                                    .filter(eventUserMapping -> eventUserMapping.getRsvp() != null && Boolean.TRUE.equals(eventUserMapping.getRsvp()))
+                                    .map(eventUserMapping -> userResponseMap.get(eventUserMapping.getUserId()).getUser())
+                                    .filter(Objects::nonNull)
+                                    .toList())
+                            .setDeclinedUsers(eventUserMappings.stream()
+                                    .filter(eventUserMapping -> eventUserMapping.getRsvp() != null && Boolean.FALSE.equals(eventUserMapping.getRsvp()))
+                                    .map(eventUserMapping -> userResponseMap.get(eventUserMapping.getUserId()).getUser())
+                                    .filter(Objects::nonNull)
+                                    .toList())
+                            .setUnknownUsers(eventUserMappings.stream()
+                                    .filter(eventUserMapping -> eventUserMapping.getRsvp() == null)
+                                    .map(eventUserMapping -> userResponseMap.get(eventUserMapping.getUserId()).getUser())
+                                    .filter(Objects::nonNull)
+                                    .toList());
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return new Response<>(true, SuccessMessages.EventSuccessMessages.GetEvents, eventResponseModelList);
     }
 
     @Override
@@ -123,13 +144,14 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
                 .setDescriptionHtml(eventRequestModel.getEvent().getDescriptionHtml())
                 .setEventType(eventRequestModel.getEvent().getEventType())
                 .setPriorityStatus(eventRequestModel.getEvent().getPriorityStatus())
-                .setStartDateTime(eventRequestModel.getEvent().getStartDateTime())
-                .setEndDateTime(eventRequestModel.getEvent().getEndDateTime())
+                .setStartDateTime(DateHelper.stringToLocalDateTime(eventRequestModel.getEvent().getStartDateTime()))
+                .setEndDateTime(DateHelper.stringToLocalDateTime(eventRequestModel.getEvent().getEndDateTime()))
                 .setTimeZone(eventRequestModel.getEvent().getTimeZone())
                 .setLocation(eventRequestModel.getEvent().getLocation())
                 .setColor(eventRequestModel.getEvent().getColor())
                 .setColorLabel(eventRequestModel.getEvent().getColorLabel())
                 .setDeleted(false)
+                .setNotes(eventRequestModel.getEvent().getNotes())
                 .setCreatedByUserId(getUserId());
 
         eventRepository.save(event);
@@ -143,7 +165,7 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
                 eventUserMappings.add(new EventUserMapping()
                         .setEventId(event.getEventId())
                         .setUserId(userId)
-                        .setRsvp(false));
+                        .setRsvp(null));
             }
         }
 
@@ -163,14 +185,28 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
 
     @Override
     public Response<Boolean> updateEvent(EventRequestModel eventRequestModel) {
-        Pair<String, Boolean> validation = validateEvent(eventRequestModel.getEvent());
-        if(!validation.getValue()){
-            return new Response<>(false, validation.getKey(), null);
-        }
-
         Optional<Event> event = eventRepository.findById(eventRequestModel.getEvent().getEventId());
         if(event.isEmpty()) {
             return new Response<>(false, ErrorMessages.EventErrorMessages.InvalidId, false);
+        }
+
+        // Flow for rsvp
+        if(eventRequestModel.getRsvp() != null) {
+            EventUserMapping eventUserMapping = eventUserMappingRepository.findEventUserMappingByEventIdAndUserId(event.get().getEventId(), getUserId());
+            eventUserMapping.setRsvp(eventRequestModel.getRsvp());
+            eventUserMappingRepository.save(eventUserMapping);
+
+            userLogDataAccessor.logData(getUserId(),
+                    SuccessMessages.EventSuccessMessages.UpdateEvent + " " + event.get().getEventId(),
+                    ApiRoutes.EventSubRoute.UPDATE_EVENT);
+
+            return new Response<>(true, SuccessMessages.EventSuccessMessages.UpdateEvent, true);
+        }
+
+        // Flow for updating event details
+        Pair<String, Boolean> validation = validateEvent(eventRequestModel.getEvent());
+        if(!validation.getValue()){
+            return new Response<>(false, validation.getKey(), null);
         }
 
          event.get()
@@ -178,16 +214,18 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
                  .setDescriptionHtml(eventRequestModel.getEvent().getDescriptionHtml())
                  .setEventType(eventRequestModel.getEvent().getEventType())
                  .setPriorityStatus(eventRequestModel.getEvent().getPriorityStatus())
-                 .setStartDateTime(eventRequestModel.getEvent().getStartDateTime())
-                 .setEndDateTime(eventRequestModel.getEvent().getEndDateTime())
+                 .setStartDateTime(DateHelper.stringToLocalDateTime(eventRequestModel.getEvent().getStartDateTime()))
+                 .setEndDateTime(DateHelper.stringToLocalDateTime(eventRequestModel.getEvent().getEndDateTime()))
                  .setTimeZone(eventRequestModel.getEvent().getTimeZone())
                  .setLocation(eventRequestModel.getEvent().getLocation())
                  .setColor(eventRequestModel.getEvent().getColor())
                  .setColorLabel(eventRequestModel.getEvent().getColorLabel())
+                 .setNotes(eventRequestModel.getEvent().getNotes())
                  .setDeleted(eventRequestModel.getEvent().isDeleted());
 
         // remove existing mappings
-        List<EventUserMapping> existingEventUserMappings = eventUserMappingRepository.findEventUserMappingByEventId(event.get().getEventId());
+        List<EventUserMapping> existingEventUserMappings = eventUserMappingRepository
+                .findEventUserMappingByEventIds(Collections.singletonList(event.get().getEventId()));
         eventUserMappingRepository.deleteAll(existingEventUserMappings);
 
         // add new mappings
@@ -200,6 +238,12 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
         }
         eventUserMappingRepository.saveAll(eventUserMappings);
 
+        eventUserMappings.add(new EventUserMapping()
+                .setEventId(event.get().getEventId())
+                .setUserId(getUserId())
+                .setRsvp(true));
+
+        eventRepository.save(event.get());
         userLogDataAccessor.logData(getUserId(),
                 SuccessMessages.EventSuccessMessages.UpdateEvent + " " + event.get().getEventId(),
                 ApiRoutes.EventSubRoute.UPDATE_EVENT);
@@ -230,7 +274,8 @@ public class EventDataAccessor extends BaseDataAccessor implements IEventSubTran
         }
 
         // fetch the mappings
-        List<EventUserMapping> eventUserMappings = eventUserMappingRepository.findEventUserMappingByEventId(eventId);
+        List<EventUserMapping> eventUserMappings = eventUserMappingRepository
+                .findEventUserMappingByEventIds(Collections.singletonList(eventId));
         EventResponseModel eventResponseModel = new EventResponseModel()
                 .setEvent(HelperUtils.copyFields(event.get(), org.example.Models.CommunicationModels.CarrierModels.Event.class))
                 .setUserIdRsvpMapping(eventUserMappings.stream().collect(Collectors.toMap(

@@ -27,8 +27,7 @@ public class EventController {
 
     @PreAuthorize("@customAuthorization.hasAuthority('" + Authorizations.VIEW_EVENTS_PERMISSION + "')")
     @GetMapping(ApiRoutes.EventSubRoute.GET_ALL_EVENTS_FOR_USERID_BASED_ON_MONTH)
-    public ResponseEntity<Response<List<EventResponseModel>>> getAllEventsForUserIdBasedOnMonth(
-            @RequestParam long userId, @RequestParam int month) {
+    public ResponseEntity<Response<List<EventResponseModel>>> getAllEventsForUserIdBasedOnMonth(@RequestParam long userId, @RequestParam int month) {
         return ResponseEntity.ok(accessor.getAllEventsForUserIdBasedOnMonth(userId, month));
     }
 
@@ -46,13 +45,13 @@ public class EventController {
 
     @PreAuthorize("@customAuthorization.hasAuthority('" + Authorizations.TOGGLE_EVENTS_PERMISSION + "')")
     @DeleteMapping(ApiRoutes.EventSubRoute.TOGGLE_EVENT)
-    public ResponseEntity<Response<Boolean>> toggleEvent(@RequestBody BaseRequest baseRequest) {
-        return ResponseEntity.ok(accessor.toggleEvent(baseRequest.getId()));
+    public ResponseEntity<Response<Boolean>> toggleEvent(@RequestParam long eventId) {
+        return ResponseEntity.ok(accessor.toggleEvent(eventId));
     }
 
     @PreAuthorize("@customAuthorization.hasAuthority('" + Authorizations.VIEW_EVENTS_PERMISSION + "')")
     @GetMapping(ApiRoutes.EventSubRoute.GET_EVENT_DETAILS_BY_ID)
-    public ResponseEntity<Response<EventResponseModel>> getEventDetailsById(@RequestBody BaseRequest baseRequest) {
-        return ResponseEntity.ok(accessor.getEventDetailsById(baseRequest.getId()));
+    public ResponseEntity<Response<EventResponseModel>> getEventDetailsById(@RequestParam long eventId) {
+        return ResponseEntity.ok(accessor.getEventDetailsById(eventId));
     }
 }

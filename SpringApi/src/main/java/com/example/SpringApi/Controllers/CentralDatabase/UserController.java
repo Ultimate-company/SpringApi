@@ -50,8 +50,8 @@ public class UserController {
 
     @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.VIEW_USER_PERMISSION +"')")
     @GetMapping(ApiRoutes.UsersSubRoute.GET_USER_BY_ID)
-    public ResponseEntity<Response<UserResponseModel>> getUserById(@RequestParam long id) throws IOException {
-        return ResponseEntity.ok(accessor.getUserById(id));
+    public ResponseEntity<Response<List<UserResponseModel>>> getUserById(@RequestParam List<Long> ids) throws IOException {
+        return ResponseEntity.ok(accessor.getUsersByIds(ids));
     }
 
     @PreAuthorize("@customAuthorization.hasAuthority('"+ Authorizations.INSERT_USER_PERMISSION +"')")
